@@ -1,12 +1,10 @@
+import requests
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import or_
 
 from library import db
 from library.forms import book_form
 from library.models import Book, Member
-from sqlalchemy import or_
-import requests
-import json
 
 book_bp = Blueprint('book_bp', __name__)
 

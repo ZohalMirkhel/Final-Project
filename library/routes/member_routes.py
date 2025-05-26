@@ -1,14 +1,12 @@
 # internal imports
-from library.forms import member_form
+from flask import Blueprint
+from flask import render_template, redirect, url_for, flash, request
+
 from library import app, db
+from library.forms import member_form
+from library.models import Book, Member
 
 # external imports
-import requests
-
-from flask import Blueprint
-
-from flask import render_template, redirect, url_for, flash, request
-from library.models import Book, Member
 
 
 members_bp = Blueprint('members_bp', __name__)

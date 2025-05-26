@@ -1,3 +1,4 @@
+from datetime import datetime
 from library import db
 
 
@@ -42,3 +43,13 @@ class Transaction(db.Model):
     date = db.Column(db.Date())
     amount = db.Column(db.Integer())
 
+
+class Checkout(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    member_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=False)
+    book_id = db.Column(db.Integer, db.ForeignKey('book.id'), nullable=False)
+    checkout_date = db.Column(db.DateTime, default=datetime.utcnow)
+    return_date = db.Column(db.DateTime, nullable=True)  # None if not returned
+
+    member = db.relationship('Member', backref='checkouts')
+    book = db.relationship('Book', backref='checkouts')

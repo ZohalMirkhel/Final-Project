@@ -1,0 +1,8 @@
+<h2>My Borrowed Books</h2>
+<ul>
+  {% for c in checkouts %}
+    <li>{{ c.book.title }} -
+        <a href="{{ url_for('client.return_book', checkout_id=c.id) }}">Return</a>
+    </li>
+  {% endfor %}
+</ul>
