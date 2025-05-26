@@ -1,9 +1,10 @@
 # internal imports
-from library import db
 from datetime import date
 
 # external imports
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, flash, request
+
+from library import db
 from library.models import Book, Member, Transaction, Book_borrowed
 
 # Define the blueprint

@@ -1,0 +1,6 @@
+<h2>My Checkout History</h2>
+<ul>
+  {% for c in checkouts %}
+    <li>{{ c.book.title }} - Borrowed: {{ c.checkout_date }} {% if c.return_date %} | Returned: {{ c.return_date }}{% else %} | Not Returned {% endif %}</li>
+  {% endfor %}
+</ul>
