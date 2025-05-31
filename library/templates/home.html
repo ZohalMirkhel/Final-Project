@@ -13,7 +13,11 @@
 {% endblock %}
 
 {% block content %}
-<!-- including call to action buttons -->
+  <!-- Pass books_for_sale to the modal as available_books -->
+  {% with available_books=books_for_sale, endpoint='transactions_bp.sell_book' %}
+    {% include 'transactions/sell_book_modal.html' %}
+  {% endwith %}
+
   {% include 'books/add_book_modal.html' %}
   {% include 'members/add_member_modal.html' %}
   {% include 'transactions/borrow_book_modal.html' %}
@@ -35,6 +39,9 @@
                   <button type="button" class="btn btn-primary m" data-bs-toggle="modal" data-bs-target="#borrowBookModal">
                       Borrow
                   </button>
+                  <button type="button" class="btn btn-primary m" data-bs-toggle="modal" data-bs-target="#sellBookModal">
+                      Sell
+                  </button>
                   <button type="button" class="btn btn-primary m" data-bs-toggle="modal" data-bs-target="#returnBookModal">
                       Return
                   </button>
@@ -42,4 +49,23 @@
           </div>
       </div>
   </div>
-{%endblock%}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const borrowModal = document.getElementById('borrowBookModal');
+
+        // Borrow Book Modal Script
+        if (borrowModal) {
+            borrowModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                if (button && button.hasAttribute('data-book-id')) {
+                    const bookId = button.getAttribute('data-book-id');
+                    document.getElementById('book_name').value = bookId;
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

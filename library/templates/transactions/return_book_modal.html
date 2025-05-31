@@ -7,25 +7,35 @@
             </div>
             <div class="modal-body">
                 <form action='./return-book' method="POST">
+                    <label class="form-label">Select Book:</label>
+                    <select name="book_name" class="custom-select form-control" id="returnBookSelect" required>
+                        <option value="" selected disabled>Select a book to return</option>
+                        {% for book in books_to_return %}
+                            <option value="{{ book.id }}">{{ book.title }}</option>
+                        {% endfor %}
+                    </select>
 
+                    <div id="bookDetails" class="mt-3" style="display:none;">
+                        <div class="mb-2">
+                            <strong>Borrowed Date:</strong>
+                            <span id="borrowedDate"></span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Due Date:</strong>
+                            <span id="dueDate"></span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Days Late:</strong>
+                            <span id="daysLate">0</span> ($<span id="lateFee">0</span>)
+                        </div>
+                    </div>
 
+                    <label class="form-label mt-3">Select Member:</label>
+                    <select name="member_name" class="custom-select form-control" id="returnMemberSelect" required disabled>
+                        <option value="" selected disabled>Select a member</option>
+                    </select>
 
-                        <label class="form-label">Select Book:</label>
-                        <select name="book_name" class="custom-select form-control" id="book_name1">
-                            <option selected>Books to return</option>
-                            {% for book in books_to_return %}
-                                <option value={{book.id}}>{{ book.title }}</option>
-                            {% endfor %}
-                        </select>
-                        <label class="form-label">Select Member:</label>
-                        <select name="member_name" class="custom-select form-control" id="member_name1">
-                            <option selected>Members</option>
-                        </select>
-
-                        <input type="checkbox" name="paid" class="form-check-input" id="paidCheck">
-                        <label class="form-check-label" for="paidCheck">Paid</label>
-
-                    <div class="modal-footer">
+                    <div class="modal-footer mt-3">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         <button type="submit" class="btn btn-primary">Return</button>
                     </div>
@@ -34,3 +44,75 @@
         </div>
     </div>
 </div>
+
+<!-- Replace the entire script with this corrected version -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const bookSelect = document.getElementById('returnBookSelect');
+    const memberSelect = document.getElementById('returnMemberSelect');
+    const bookDetails = document.getElementById('bookDetails');
+    const borrowedDate = document.getElementById('borrowedDate');
+    const dueDate = document.getElementById('dueDate');
+    const daysLate = document.getElementById('daysLate');
+    const lateFee = document.getElementById('lateFee');
+
+    bookSelect.addEventListener('change', function() {
+        const bookId = this.value;
+        if (!bookId) {
+            bookDetails.style.display = 'none';
+            memberSelect.disabled = true;
+            return;
+        }
+
+        // Fetch ACTUAL book details from server
+        fetch(`/book/${bookId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.members && data.members.length > 0) {
+                    // Populate member select
+                    memberSelect.innerHTML = '<option value="" selected disabled>Select a member</option>';
+                    data.members.forEach(member => {
+                        const option = document.createElement('option');
+                        option.value = member.id;
+                        option.textContent = member.member_name;
+                        // Store dates as data attributes
+                        option.dataset.borrowedDate = member.borrowed_date;
+                        option.dataset.dueDate = member.due_date;
+                        memberSelect.appendChild(option);
+                    });
+                    memberSelect.disabled = false;
+                } else {
+                    memberSelect.innerHTML = '<option value="" selected disabled>No active borrowers</option>';
+                    memberSelect.disabled = true;
+                    bookDetails.style.display = 'none';
+                }
+            });
+    });
+
+    memberSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        if (!selectedOption.value) {
+            bookDetails.style.display = 'none';
+            return;
+        }
+
+        // Get ACTUAL dates from data attributes
+        const borrowedDateStr = selectedOption.dataset.borrowedDate;
+        const dueDateStr = selectedOption.dataset.dueDate;
+
+        borrowedDate.textContent = borrowedDateStr;
+        dueDate.textContent = dueDateStr;
+
+        // Calculate actual late fee
+        const today = new Date();
+        const due = new Date(dueDateStr);
+        const diffDays = Math.max(0, Math.ceil((today - due) / (1000 * 60 * 60 * 24)));
+        const fee = diffDays * 10;
+
+        daysLate.textContent = diffDays;
+        lateFee.textContent = fee;
+
+        bookDetails.style.display = 'block';
+    });
+});
+</script>

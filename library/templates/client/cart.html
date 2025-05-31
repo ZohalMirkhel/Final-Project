@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Your Cart</h2>
+{% if cart_items %}
+<ul>
+  {% for item in cart_items %}
+  <li>
+    {{ item.book.title }} ({{ item.action|capitalize }})
+    <a href="{{ url_for('client.remove_from_cart', cart_id=item.id) }}">Remove</a>
+  </li>
+  {% endfor %}
+</ul>
+<form action="{{ url_for('client.checkout_cart') }}" method="POST">
+  <button type="submit">Checkout</button>
+</form>
+{% else %}
+<p>Your cart is empty</p>
+{% endif %}
+{% endblock %}

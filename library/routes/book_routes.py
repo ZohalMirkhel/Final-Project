@@ -17,14 +17,17 @@ def books_page():
     books_to_borrow = Book.query.filter(Book.borrow_stock > 0).all()
     members_can_borrows = Member.query.filter(Member.to_pay < 500).all()
     books_to_return = Book.query.filter(Book.borrower).all()
+    books_for_sale = Book.query.filter(Book.stock > 0).all()
 
     if form_book.validate_on_submit():
         book_to_create = Book(
             title=form_book.title.data,
             isbn=form_book.isbn.data,
             author=form_book.author.data,
+            category=form_book.category.data,  # New field
             stock=form_book.stock.data,
-            borrow_stock=form_book.stock.data
+            borrow_stock=form_book.stock.data,
+            price=form_book.price.data  # New field
         )
         db.session.add(book_to_create)
         db.session.commit()
@@ -40,7 +43,8 @@ def books_page():
                            books=books,
                            books_to_borrow=books_to_borrow,
                            members_can_borrow=members_can_borrows,
-                           books_to_return=books_to_return)
+                           books_to_return=books_to_return,
+                           books_for_sale=books_for_sale)
 
 
 @book_bp.route('/delete-book/<int:book_id>', methods=['POST'])
@@ -65,6 +69,10 @@ def update_book(book_id):
             book.author = request.form.get("author")
         if request.form.get("isbn") and book.isbn != request.form.get("isbn"):
             book.isbn = request.form.get("isbn")
+        if request.form.get("price"):
+            book.price = float(request.form.get("price"))
+        if request.form.get("category"):
+            book.category = request.form.get("category")
         if request.form.get("stock"):
             new_stock = int(request.form.get("stock"))
             book.stock = new_stock
@@ -120,7 +128,6 @@ def import_books_from_frappe():
 
     return redirect(url_for('book_bp.books_page'))
 
-
 @book_bp.route('/book/<int:book_id>')
 def get_book_members(book_id):
     book = Book.query.get_or_404(book_id)
@@ -129,3 +136,36 @@ def get_book_members(book_id):
         'member_name': member.member_name
     } for member in book.borrower]
     return jsonify({'members': members})
+
+
+@book_bp.route('/purchase-book', methods=['POST'])
+def purchase_book():
+    title = request.form.get("title")
+    author = request.form.get("author")
+    isbn = request.form.get("isbn")
+    category = request.form.get("category")
+    price = float(request.form.get("price"))
+
+    new_book = Book(
+        title=title,
+        author=author,
+        isbn=isbn,
+        category=category,
+        stock=1,
+        borrow_stock=1
+    )
+
+    purchase_transaction = Transaction(
+        book_name=title,
+        member_name="Library Purchase",
+        type_of_transaction="purchase",
+        amount=-price,  # Negative amount for expense
+        date=date.today()
+    )
+
+    db.session.add(new_book)
+    db.session.add(purchase_transaction)
+    db.session.commit()
+
+    flash("Book purchased and added to library", category='success')
+    return redirect(url_for('book_bp.books_page'))

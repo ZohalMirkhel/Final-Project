@@ -14,38 +14,42 @@ members_bp = Blueprint('members_bp', __name__)
 # Renders member page
 @members_bp.route('/members', methods=['GET', 'POST'])
 def members_page():
-    # read members from db
-    member = Member.query.order_by('id').all()
+    members = Member.query.order_by('id').all()
+
     form_member = member_form()
-    # checks book and member eligibility for borrowing
     books_to_borrow = Book.query.filter(Book.borrow_stock > 0).all()
-    members_can_borrows = Member.query.filter(Member.to_pay < 500).all()
+    members_can_borrow = Member.query.filter(Member.to_pay < 500).all()
     books_to_return = Book.query.filter(Book.borrower).all()
-    # if no validation error in creating a member
+    books_for_sale = Book.query.filter(Book.stock > 0).all()
+
     if form_member.validate_on_submit():
-        # creates a member in db
-        member_to_create = Member(name=member_form().name.data,
-                                  phone_number=member_form().phone_number.data,
-                                  member_name=member_form().member_name.data)
+        member_to_create = Member(
+            name=form_member.name.data,  # FIX: Use actual form instance
+            phone_number=form_member.phone_number.data,
+            member_name=form_member.member_name.data,
+            to_pay=0
+        )
         db.session.add(member_to_create)
         db.session.commit()
-
-        flash('Successfully create a member', category="success")
+        flash('Successfully created a member', category="success")
         return redirect(request.referrer)
 
-    # if validation error occured
-    if form_member.errors != {}:  # If there are no errors from the validations
+    if form_member.errors != {}:
         for err_msg in form_member.errors.values():
-            flash(f'There was an error with creating a Member: {err_msg}', category='danger')
-    return render_template('members/members.html', member_form=form_member,
-                           members=member, length=len(member),
-                           books_to_borrow=books_to_borrow,
-                           members_can_borrow=members_can_borrows,
-                           books_to_return=books_to_return)
+            flash(f'Error creating member: {err_msg}', category='danger')
 
+    # FIX: Pass 'members' (plural) to template
+    return render_template('members/members.html',
+                           member_form=form_member,
+                           members=members,
+                           length=len(members),
+                           books_to_borrow=books_to_borrow,
+                           members_can_borrow=members_can_borrow,
+                           books_to_return=books_to_return,
+                           books_for_sale=books_for_sale)
 
 # deletes a member
-@app.route('/delete-member/<member_id>', methods=['POST'])
+@members_bp.route('/delete-member/<member_id>', methods=['POST'])
 def delete_member(member_id):
     try:
         # reads requested member from db
@@ -57,11 +61,11 @@ def delete_member(member_id):
     except:
         flash("Error in deletion", category="danger")
 
-    return redirect(url_for('members_page'))
+    return redirect(url_for('routes_bp.home_page'))
 
 
 # updates a member
-@app.route('/update-member/<member_id>', methods=['GET', 'POST'])
+@members_bp.route('/update-member/<member_id>', methods=['GET', 'POST'])
 def update_member(member_id):
     # reads requested member from db
     member = Member.query.filter_by(id=member_id).first()

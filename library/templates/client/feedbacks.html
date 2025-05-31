@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>User Feedbacks</h2>
+{% if feedbacks %}
+<ul>
+  {% for feedback in feedbacks %}
+  <li>
+    <strong>{{ feedback.member.member_name }}</strong>
+    <p>{{ feedback.content }}</p>
+    <small>Rating: {{ feedback.rating }}/5 - {{ feedback.created_at }}</small>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p>No feedbacks yet</p>
+{% endif %}
+{% endblock %}

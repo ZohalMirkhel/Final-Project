@@ -8,6 +8,9 @@
 
     {% include 'transactions/borrow_book_modal.html' %}
     {% include 'transactions/return_book_modal.html' %}
+    {% with available_books=books_for_sale, endpoint='transactions_bp.sell_book' %}
+        {% include 'transactions/sell_book_modal.html' %}
+    {% endwith %}
 
     <button type="button" class="btn btn-dark m" data-bs-toggle="modal" data-bs-target="#borrowBookModal">
         Borrow
@@ -15,6 +18,9 @@
 
     <button type="button" class="btn btn-dark m" data-bs-toggle="modal" data-bs-target="#returnBookModal">
         Return
+    </button>
+    <button type="button" class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#sellBookModal">
+        Sell Book
     </button>
 
     {% if  length > 0 %}

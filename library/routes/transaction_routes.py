@@ -1,8 +1,8 @@
 # internal imports
-from datetime import date
-
+from datetime import date, timedelta, datetime
 # external imports
-from flask import Blueprint, render_template, redirect, flash, request
+from flask import Blueprint, render_template, redirect, flash, request, url_for
+from flask import jsonify
 
 from library import db
 from library.models import Book, Member, Transaction, Book_borrowed
@@ -16,64 +16,270 @@ def transactions_page():
     transaction = Transaction.query.order_by('id').all()
     books_to_borrow = Book.query.filter(Book.borrow_stock > 0).all()
     members_can_borrows = Member.query.filter(Member.to_pay < 500).all()
+    books_for_sale = Book.query.filter(Book.stock > 0).all()
     books_to_return = Book.query.filter(Book.borrower).all()
     return render_template('transactions/transactions.html',
                            transactions=transaction, length=len(transaction),
                            books_to_borrow=books_to_borrow,
                            members_can_borrow=members_can_borrows,
-                           books_to_return=books_to_return)
+                           books_to_return=books_to_return,
+                           books_for_sale=books_for_sale)
 
-# Route: Borrow Book
-@transactions_bp.route('/borrow-book', methods=['GET', 'POST'])
+def redirect_back():
+    return redirect(request.referrer or url_for('transactions_bp.transactions_page'))
+
+@transactions_bp.route('/borrow-book', methods=['POST'])
 def borrow_book():
-    member_requested = request.form.get("member_name")
-    book_requested = request.form.get("book_name")
-    member = Member.query.get(int(member_requested))
-    book = Book.query.get(int(book_requested))
+    try:
+        member_id = request.form.get("member_name")
+        book_id = request.form.get("book_name")
+        borrow_fee = float(request.form.get("borrow_fee", 0))
 
-    if book and member:
-        member.to_pay += 30
+        # Validate inputs
+        if not member_id or not member_id.isdigit():
+            flash("Please select a valid member", category='danger')
+            return redirect_back()
+        if not book_id or not book_id.isdigit():
+            flash("Please select a valid book", category='danger')
+            return redirect_back()
+
+        member = Member.query.get(int(member_id))
+        book = Book.query.get(int(book_id))
+
+        if not book or not member:
+            flash("Book or member not found", category='danger')
+            return redirect_back()
+
+        # Check if book is available for borrowing
+        if book.borrow_stock < 1:
+            flash("No copies available for borrowing", category='danger')
+            return redirect_back()
+
+        # Calculate due date (14 days from now)
+        due_date = datetime.utcnow() + timedelta(days=14)
+
+        # Create borrow record with dates
+        borrow_record = Book_borrowed(
+            book_id=book.id,
+            member_id=member.id,
+            borrowed_date=datetime.utcnow(),
+            due_date=due_date
+        )
+        db.session.add(borrow_record)
+
+        # Update book stock
         book.borrow_stock -= 1
-        book.member_count += 1
-        borrow = Book_borrowed(book=book.id, member=member.id)
-        borrow_book = Transaction(book_name=book.title,
-                                  member_name=member.member_name,
-                                  type_of_transaction="borrow",
-                                  amount=0,
-                                  date=date.today())
-        db.session.add_all([borrow_book, borrow])
+
+        # Create transaction record
+        borrow_transaction = Transaction(
+            book_name=book.title,
+            member_name=member.member_name,
+            type_of_transaction="borrow",
+            date=date.today(),
+            amount=borrow_fee,
+            book_id=book.id,
+            member_id=member.id
+        )
+        db.session.add(borrow_transaction)
+
         db.session.commit()
-        flash("Issued book", category='success')
-    else:
-        flash("Enter the Value", category='danger')
+        flash("Book borrowed successfully. Due date: " + due_date.strftime("%Y-%m-%d"), category='success')
+        return redirect_back()
 
-    return redirect(request.referrer)
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error: {str(e)}", category='danger')
+        return redirect_back()
 
-# Route: Return Book
-@transactions_bp.route('/return-book', methods=['GET', 'POST'])
+# Route: Return Book (Fixed)
+@transactions_bp.route('/return-book', methods=['POST'])
 def return_book():
-    member_requested = request.form.get("member_name")
-    book_requested = request.form.get("book_name")
-    is_paid = request.form.get("paid")
-    paid = 30 if is_paid == 'on' else 0
+    try:
+        member_id = request.form.get("member_name")
+        book_id = request.form.get("book_name")
 
-    member = Member.query.get(member_requested)
-    book = Book.query.get(book_requested)
+        # Validate inputs
+        if not member_id or not member_id.isdigit():
+            flash("Please select a valid member", category='danger')
+            return redirect_back()
+        if not book_id or not book_id.isdigit():
+            flash("Please select a valid book", category='danger')
+            return redirect_back()
 
-    if member and book:
-        member.to_pay -= paid
-        member.total_paid += paid
+        member = Member.query.get(int(member_id))
+        book = Book.query.get(int(book_id))
+
+        if not member:
+            flash("Member not found", category='danger')
+            return redirect_back()
+        if not book:
+            flash("Book not found", category='danger')
+            return redirect_back()
+
+        # Find borrow record
+        borrow_record = Book_borrowed.query.filter_by(
+            book_id=book.id,
+            member_id=member.id
+        ).first()
+
+        if not borrow_record:
+            flash("This member hasn't borrowed this book", category='danger')
+            return redirect_back()
+
+        # Calculate late fee if applicable
+        late_fee = 0
+        if datetime.utcnow() > borrow_record.due_date:
+            days_late = (datetime.utcnow() - borrow_record.due_date).days
+            late_fee = days_late * 10  # $10 per day late
+            member.to_pay += late_fee
+
+        # Remove borrow record
+        db.session.delete(borrow_record)
+
+        # Update book stock
         book.borrow_stock += 1
-        book.borrower.remove(member)
-        return_book = Transaction(book_name=book.title,
-                                  member_name=member.member_name,
-                                  type_of_transaction="return",
-                                  amount=paid,
-                                  date=date.today())
-        db.session.add(return_book)
+
+        # Create return transaction
+        return_transaction = Transaction(
+            book_name=book.title,
+            member_name=member.member_name,
+            type_of_transaction="return",
+            date=date.today(),
+            amount=late_fee,
+            book_id=book.id,
+            member_id=member.id
+        )
+        db.session.add(return_transaction)
+
         db.session.commit()
-        flash(f"Returned book from {member.member_name}", category='success')
+
+        if late_fee > 0:
+            flash(f"Book returned successfully with ${late_fee} late fee", category='warning')
+        else:
+            flash("Book returned successfully", category='success')
+
+        return redirect_back()
+
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error: {str(e)}", category='danger')
+        return redirect_back()
+
+
+@transactions_bp.route('/book/<int:book_id>')
+def get_book_details(book_id):
+    book = Book.query.get(book_id)
+    if not book:
+        return jsonify({'error': 'Book not found'}), 404
+
+    borrow_records = []
+    # Use the relationship to get borrow records
+    for borrow in book.borrow_records:
+        borrow_records.append({
+            'id': borrow.member.id,
+            'member_name': borrow.member.member_name,
+            'borrowed_date': borrow.borrowed_date.strftime('%Y-%m-%d'),
+            'due_date': borrow.due_date.strftime('%Y-%m-%d')
+        })
+
+    return jsonify({
+        'book_id': book.id,
+        'title': book.title,
+        'members': borrow_records
+    })
+
+@transactions_bp.route('/sell-book', methods=['POST'])
+def sell_book():
+    book_id = request.form.get('book_id')
+    member_id = request.form.get('member_id')
+    price = float(request.form.get('price'))
+
+    book = Book.query.get(book_id)
+    member = Member.query.get(member_id)
+
+    if not book:
+        flash("Book not found", category="danger")
+        return redirect_back()
+
+    if not member:
+        flash("Member not found", category="danger")
+        return redirect_back()
+
+    if book.stock < 1:
+        flash("This book is out of stock", category="danger")
+        return redirect_back()
+
+    try:
+        book.stock -= 1
+        if book.sales_count is None:
+            book.sales_count = 1
+        else:
+            book.sales_count += 1
+
+        sale_transaction = Transaction(
+            book_name=book.title,
+            member_name=member.member_name,
+            type_of_transaction="sale",
+            amount=price,
+            date=date.today(),
+            book_id=book.id,
+            member_id=member.id
+        )
+
+        member.to_pay += price
+
+        db.session.add(sale_transaction)
+        db.session.commit()
+        flash(f"Successfully sold {book.title}", category="success")
+        return redirect_back()
+    except Exception as e:
+        flash(f"Error: {str(e)}", category="danger")
+        return redirect_back()
+
+
+def redirect_back():
+    """Redirect back to the referring page, or to transactions page if no referrer"""
+    return redirect(request.referrer or url_for('transactions_bp.transactions_page'))
+
+
+# Add purchase from member route
+@transactions_bp.route('/purchase-book', methods=['POST'])
+def purchase_book():
+    member_requested = request.form.get("member_name")
+    title = request.form.get("title")
+    author = request.form.get("author")
+    isbn = request.form.get("isbn")
+    category = request.form.get("category")
+    price = float(request.form.get("price"))
+
+    member = Member.query.get(int(member_requested))
+
+    if member:
+        # Create new book
+        new_book = Book(
+            title=title,
+            author=author,
+            isbn=isbn,
+            category=category,
+            stock=1,
+            borrow_stock=1,
+            price=0  # Reset price for library use
+        )
+
+        # Record transaction
+        purchase_transaction = Transaction(
+            book_name=title,
+            member_name=member.member_name,
+            type_of_transaction="purchase",
+            amount=-price,  # Negative for expense
+            date=date.today()
+        )
+
+        db.session.add(new_book)
+        db.session.add(purchase_transaction)
+        db.session.commit()
+        flash("Book purchased and added to library", category='success')
     else:
-        flash("Error in returning the book", category='danger')
+        flash("Purchase failed", category='danger')
 
     return redirect(request.referrer)

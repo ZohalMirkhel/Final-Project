@@ -7,15 +7,19 @@
 {% block content %}
 
     <div class="report">
-        <li class="report-data">Total Number of Members :
-            {{ members }}</li>
-        <li class="report-data">Total Number of Books :
-            {{ books }}</li>
+        <li class="report-data">Total Number of Members : {{ members }}</li>
+        <li class="report-data">Total Number of Books : {{ books }}</li>
     </div>
 
-    <!-- chart elements definition -->
+    <!-- Existing charts -->
     <canvas id="book-line-chart" width="600" height="200"></canvas>
     <canvas id="member-line-chart" width="600" height="200"></canvas>
+
+    <!-- Add this after existing charts -->
+    <div class="mt-5">  <!-- Added margin top for spacing -->
+        <h4>Top Sold Books</h4>
+        <canvas id="sold-books-chart" width="600" height="200"></canvas>
+    </div>
 
 {% endblock %}
 
@@ -74,6 +78,44 @@
                 }
             }
         });
+        sold_books_titles = JSON.parse({{ sold_books_titles | tojson }});
+        sold_books_counts = JSON.parse({{ sold_books_counts | tojson }});
+
+        // Sold books chart
+        new Chart(document.getElementById("sold-books-chart"), {
+            "type": "bar",
+            "data": {
+                "labels": sold_books_titles,
+                "datasets": [{
+                    "label": "Top 10 Sold Books",
+                    "data": sold_books_counts,
+                    backgroundColor: ['rgba(153, 102, 255, 0.2)'],
+                    borderColor: ['rgb(153, 102, 255)'],
+                    borderWidth: 1
+                }]
+            },
+            "options": {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        document.addEventListener('DOMContentLoaded', function() {
+
+        const sellModal = document.getElementById('sellBookModal');
+        sellModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const bookId = button.getAttribute('data-book-id');
+            const bookTitle = button.getAttribute('data-book-title');
+            const bookPrice = button.getAttribute('data-book-price');
+
+            document.getElementById('sell_book_id').value = bookId;
+            document.getElementById('sell_book_title').textContent = bookTitle;
+            document.getElementById('price').value = bookPrice || '0';
+        });
+    });
     </script>
 
 {% endblock %}

@@ -1,6 +1,6 @@
-import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate  # <-- Add this
 
 app = Flask(__name__)
 ENV = 'dev'
@@ -14,6 +14,7 @@ else:
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 # ✅ Import your blueprints here
 from library.routes.book_routes import book_bp

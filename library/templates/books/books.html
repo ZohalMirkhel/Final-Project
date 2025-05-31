@@ -6,21 +6,26 @@
 
 {% block content %}
 
+
+    {% with available_books=books_for_sale, endpoint='transactions_bp.sell_book' %}
+        {% include 'transactions/sell_book_modal.html' %}
+    {% endwith %}
+
     {% include 'books/add_book_modal.html' %}
     {% include 'transactions/return_book_modal.html' %}
+    {% include 'import-books-frappe.html' %}
+    {% include 'transactions/borrow_book_modal.html' %}
+
 
     <button type="button" class="btn btn-dark m" data-bs-toggle="modal" data-bs-target="#bookModal">
         Create
     </button>
-    
+
     <button type="button" class="btn btn-dark m" data-bs-toggle="modal" data-bs-target="#returnBookModal">
         Return
     </button>
 
-    {% include 'import-books-frappe.html' %}
-
     {% if books|length > 0 %}
-
         <table class="table">
             <thead class="table-dark">
                 <tr>
@@ -36,7 +41,6 @@
                 {% for book in books %}
                     {% include 'books/delete_book_modal.html' %}
                     {% include 'books/update_book_modal.html' %}
-                    {% include 'transactions/borrow_book_modal.html' %}
                     <tr>
                         <th scope="row" class="table-id"> {{ book.id }}</th>
                         <td>{{ book.title }}</td>
@@ -46,25 +50,49 @@
                         <td class="action">
                             <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal-{{book.id}}">
                                 Delete
-                            </button>  
+                            </button>
 
                             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#updateBookModal-{{book.id}}">
                                 Update
                             </button>
 
                             {% if book.borrow_stock > 0 %}
-                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#borrowBookModal-{{book.id}}">
+                            <button type="button" class="btn btn-primary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#borrowBookModal"
+                                    data-book-id="{{ book.id }}">
                                 Borrow
                             </button>
-                            {% endif %}
-                            
+
+                            <!-- FIXED: Changed endfor to endif -->
+                            <button type="button" class="btn btn-success"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#sellBookModal"
+                                    data-book-id="{{ book.id }}"
+                                    data-book-title="{{ book.title }}"
+                                    data-book-price="{{ book.price }}">
+                                Sell
+                            </button>
+                            {% endif %} <!-- CORRECTED THIS LINE -->
                         </td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
-
     {% else %}
         <div class="text-center empty-text">No book Available</div>
     {% endif %}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const borrowModal = document.getElementById('borrowBookModal');
+            borrowModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const bookId = button.getAttribute('data-book-id');
+                if (bookId) {
+                    document.getElementById('book_name').value = bookId;
+                }
+            });
+        });
+    </script>
 {% endblock %}

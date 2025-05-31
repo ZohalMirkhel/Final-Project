@@ -13,44 +13,81 @@ routes_bp = Blueprint('routes_bp', __name__)
 def home_page():
     books_to_borrow = Book.query.filter(Book.borrow_stock > 0).all()
     members_can_borrows = Member.query.filter(Member.to_pay < 500).all()
+    books_for_sale = Book.query.filter(Book.stock > 0).all()
     books_to_return = Book.query.filter(Book.borrower).all()
-    return render_template('home.html', member_form=member_form(),
+    return render_template('home.html',
+                           member_form=member_form(),
                            book_form=book_form(),
                            books_to_borrow=books_to_borrow,
                            members_can_borrow=members_can_borrows,
-                           books_to_return=books_to_return, book=False)
+                           books_for_sale=books_for_sale,
+                           books_to_return=books_to_return,
+                           book=False)
+
 
 @routes_bp.route('/reports', methods=['GET', 'POST'])
 def report_page():
     books = Book.query.all()
     members = Member.query.all()
 
+    # Existing code for borrowed books
     popular_books_title = []
     books_count = []
+
+    # New code for sold books
+    sold_books_titles = []
+    sold_books_counts = []
+
+    # Existing code for paying members
     member_paying_most = []
     member_paid = []
 
+    # Get top borrowed books
     popular_books = Book.query.order_by(desc(Book.member_count)).limit(10).all()
+
+    # Get top sold books (new)
+    top_sold_books = Book.query.order_by(desc(Book.sales_count)).limit(10).all()
+
+    # Get top paying members
     most_paying_members = Member.query.order_by(desc(Member.total_paid)).limit(10).all()
 
+    # Process borrowed books data
     for book in popular_books:
         if book.member_count > 0:
             popular_books_title.append(book.title[0:20])
             books_count.append(book.member_count)
 
-    popular_books_title = json.dumps(popular_books_title)
-    books_count = json.dumps(books_count)
+    # Process sold books data (new)
+    for book in top_sold_books:
+        if book.sales_count and book.sales_count > 0:
+            sold_books_titles.append(book.title[:20])
+            sold_books_counts.append(book.sales_count)
 
+    # Process paying members data
     for member in most_paying_members:
         if member.total_paid > 0:
             member_paying_most.append(member.member_name)
             member_paid.append(member.total_paid)
 
+    # Convert to JSON for JavaScript
+    popular_books_title = json.dumps(popular_books_title)
+    books_count = json.dumps(books_count)
     member_paying_most = json.dumps(member_paying_most)
     member_paid = json.dumps(member_paid)
+    sold_books_titles = json.dumps(sold_books_titles)  # New
+    sold_books_counts = json.dumps(sold_books_counts)  # New
 
-    return render_template("reports.html", members=len(members),
-                           books=len(books), member_paid=member_paid,
+    return render_template("reports.html",
+                           members=len(members),
+                           books=len(books),
+                           member_paid=member_paid,
                            book_title=popular_books_title,
                            members_name=member_paying_most,
-                           book_count=books_count)
+                           book_count=books_count,
+                           sold_books_titles=sold_books_titles,
+                           sold_books_counts=sold_books_counts)
+
+@routes_bp.route('/feedbacks')
+def view_feedbacks():
+    return render_template('admin/feedbacks.html',
+                          feedbacks=Feedback.query.all())

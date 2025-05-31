@@ -1,45 +1,45 @@
-{% if book %}
-    <div class="modal fade" id="borrowBookModal-{{ book.id }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="borrowBookModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bookModalLabel">Borrow Book</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action='./borrow-book' method="POST">
+                    <label class="form-label">Select Book:</label>
+                    <select name="book_name" class="custom-select form-control" id="book_name" required>
+                        <option value="" selected disabled>Select a book to borrow</option>
+                        {% for book in books_to_borrow %}
+                            <option value="{{ book.id }}">{{ book.title }}</option>
+                        {% endfor %}
+                    </select>
 
-    {% else %}
-        <div class="modal fade" id="borrowBookModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        {% endif %}
+                    <label class="form-label mt-3">Select Member:</label>
+                    <select name="member_name" class="custom-select form-control" id="member_name" required>
+                        <option value="" selected disabled>Select a member</option>
+                        {% for member in members_can_borrow %}
+                            <option value="{{ member.id }}">{{ member.member_name }}</option>
+                        {% endfor %}
+                    </select>
 
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="bookModalLabel">Borrow Book</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form action='./borrow-book' method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Borrowing Fee:</label>
+                        <input type="number" name="borrow_fee" class="form-control" value="0" min="0" step="0.01" required>
+                    </div>
 
-                        <label class="form-label">Select Book:</label>
-                        <select name="book_name" class="custom-select form-control" id="book_name">
-                            {% if book %}
-                                <option selected="selected" required="required" value={{book.id}}>{{ book.title }}</option>
-                            {% else %}
-                                <option selected="selected" required="required">Books Available for Borrow</option>
-                            {% endif %}
-                            {% for book in books_to_borrow %}
-                                <option value={{book.id}}>{{ book.title }}</option>
-                            {% endfor %}
-                        </select>
+                    <!-- Add due date information -->
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle"></i> This book must be returned within 14 days.
+                        Late returns will incur a $10/day fee.
+                    </div>
 
-                        <label class="form-label">Select Member:</label>
-                        <select name="member_name" required="required" class="custom-select form-control" id="member_name">
-                            <option selected="selected">Members</option>
-                            {% for member in members_can_borrow %}
-                                <option value={{member.id}}>{{ member.member_name }}</option>
-                            {% endfor %}
-                        </select>
-
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <button type="submit" class="btn btn-primary">Borrow</button>
-                        </div>
-                    </form>
-                </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Borrow</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
+</div>

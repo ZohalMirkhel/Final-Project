@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>My Books</h2>
+
+<h3>Borrowed Books</h3>
+{% if borrowed %}
+<ul>
+  {% for book in borrowed %}
+  <li>
+    {{ book.book.title }}
+    <a href="{{ url_for('client.return_book', checkout_id=book.id) }}">Return</a>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p>No borrowed books</p>
+{% endif %}
+
+<h3>Purchased Books</h3>
+{% if purchased %}
+<ul>
+  {% for purchase in purchased %}
+  <li>{{ purchase.book_name }} (Purchased on {{ purchase.date }})</li>
+  {% endfor %}
+</ul>
+{% else %}
+<p>No purchased books</p>
+{% endif %}
+{% endblock %}
