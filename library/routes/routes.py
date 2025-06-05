@@ -2,6 +2,7 @@ import json
 
 from flask import Blueprint, render_template
 from sqlalchemy import desc
+from datetime import datetime
 
 from library.forms import book_form, member_form
 from library.models import Book, Member
@@ -12,7 +13,10 @@ routes_bp = Blueprint('routes_bp', __name__)
 @routes_bp.route('/home')
 def home_page():
     books_to_borrow = Book.query.filter(Book.borrow_stock > 0).all()
-    members_can_borrows = Member.query.filter(Member.to_pay < 500).all()
+    members_can_borrows = Member.query.filter(
+        Member.membership_status == 'active',
+        Member.membership_expiry > datetime.utcnow()
+    ).all()
     books_for_sale = Book.query.filter(Book.stock > 0).all()
     books_to_return = Book.query.filter(Book.borrower).all()
     return render_template('home.html',
@@ -48,9 +52,6 @@ def report_page():
     # Get top sold books (new)
     top_sold_books = Book.query.order_by(desc(Book.sales_count)).limit(10).all()
 
-    # Get top paying members
-    most_paying_members = Member.query.order_by(desc(Member.total_paid)).limit(10).all()
-
     # Process borrowed books data
     for book in popular_books:
         if book.member_count > 0:
@@ -62,12 +63,6 @@ def report_page():
         if book.sales_count and book.sales_count > 0:
             sold_books_titles.append(book.title[:20])
             sold_books_counts.append(book.sales_count)
-
-    # Process paying members data
-    for member in most_paying_members:
-        if member.total_paid > 0:
-            member_paying_most.append(member.member_name)
-            member_paid.append(member.total_paid)
 
     # Convert to JSON for JavaScript
     popular_books_title = json.dumps(popular_books_title)

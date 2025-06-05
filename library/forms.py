@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, IntegerField, SubmitField, TextAreaField, SelectField, FloatField
-from wtforms.validators import Length, DataRequired, ValidationError, InputRequired
+from wtforms.validators import Length, DataRequired, ValidationError, InputRequired, NumberRange
 from library.models import Member, Book, Transaction
 
 
@@ -21,6 +21,9 @@ class member_form(FlaskForm):
         if phone:
             raise ValidationError('Phone Number already exists! Please try a different Phone Number')
 
+    membership_months = IntegerField(label='Membership Months',
+                                     validators=[InputRequired(), NumberRange(min=1)])
+    membership_fee = FloatField('Membership Fee', validators=[InputRequired(), NumberRange(min=20)])
     name = StringField(label='Name', validators=[Length(min=2, max=30), DataRequired()])
     member_name = StringField(label='Member Name', validators=[Length(min=2, max=30), DataRequired()])
     phone_number = StringField(label='Phone Number', validators=[DataRequired()])
@@ -38,9 +41,9 @@ class book_form(FlaskForm):
     title = StringField('Title', validators=[InputRequired()])
     isbn = StringField('ISBN', validators=[InputRequired()])
     author = StringField('Author', validators=[InputRequired()])
-    category = StringField('Category', validators=[InputRequired()])  # New field
+    category = StringField('Category', validators=[InputRequired()])
+    price = FloatField('Price', validators=[DataRequired()])
     stock = IntegerField('Stock', validators=[InputRequired()])
-    price = FloatField('Price', default=0.0)  # For selling books
     submit = SubmitField('Add Book')
 
 

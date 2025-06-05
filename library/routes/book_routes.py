@@ -1,6 +1,8 @@
 import requests
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from sqlalchemy import or_
+from library.models import Transaction
+from datetime import datetime
 
 from library import db
 from library.forms import book_form
@@ -15,7 +17,10 @@ def books_page():
     books = Book.query.order_by('id').all()
     form_book = book_form()
     books_to_borrow = Book.query.filter(Book.borrow_stock > 0).all()
-    members_can_borrows = Member.query.filter(Member.to_pay < 500).all()
+    members_can_borrows = Member.query.filter(
+        Member.membership_status == 'active',
+        Member.membership_expiry > datetime.utcnow()
+    ).all()
     books_to_return = Book.query.filter(Book.borrower).all()
     books_for_sale = Book.query.filter(Book.stock > 0).all()
 
@@ -24,10 +29,10 @@ def books_page():
             title=form_book.title.data,
             isbn=form_book.isbn.data,
             author=form_book.author.data,
-            category=form_book.category.data,  # New field
+            category=form_book.category.data,
             stock=form_book.stock.data,
             borrow_stock=form_book.stock.data,
-            price=form_book.price.data  # New field
+            price=form_book.price.data
         )
         db.session.add(book_to_create)
         db.session.commit()
@@ -94,47 +99,17 @@ def search_book():
         )).all()
     return render_template('books/search_page.html', books=books)
 
-
-@book_bp.route('/import-from-frappe', methods=['POST'])
-def import_books_from_frappe():
-    title = request.form.get('title')
-    try:
-        response = requests.get(f"https://frappe.io/api/method/frappe-library?page=1&title={title}")
-        books_data = response.json()['message']
-
-        imported_count = 0
-        for book_data in books_data:
-            # Check for existing book by title and author
-            exists = Book.query.filter_by(
-                title=book_data['title'],
-                author=book_data['authors']
-            ).first()
-
-            if not exists:
-                new_book = Book(
-                    title=book_data['title'],
-                    isbn=book_data['isbn'],
-                    author=book_data['authors'],
-                    stock=20,
-                    borrow_stock=20
-                )
-                db.session.add(new_book)
-                imported_count += 1
-
-        db.session.commit()
-        flash(f"Imported {imported_count} new books", category="success")
-    except Exception as e:
-        flash(f"Import error: {str(e)}", category="danger")
-
-    return redirect(url_for('book_bp.books_page'))
-
 @book_bp.route('/book/<int:book_id>')
 def get_book_members(book_id):
     book = Book.query.get_or_404(book_id)
-    members = [{
-        'id': member.id,
-        'member_name': member.member_name
-    } for member in book.borrower]
+    members = []
+    for borrow in book.borrow_records:  # Use borrow_records relationship
+        members.append({
+            'id': borrow.member.id,
+            'member_name': borrow.member.member_name,
+            'borrowed_date': borrow.borrowed_date.strftime('%Y-%m-%d'),  # Add this
+            'due_date': borrow.due_date.strftime('%Y-%m-%d')              # Add this
+        })
     return jsonify({'members': members})
 
 
@@ -168,4 +143,46 @@ def purchase_book():
     db.session.commit()
 
     flash("Book purchased and added to library", category='success')
+    return redirect(url_for('book_bp.books_page'))
+
+@book_bp.route('/import-from-frappe', methods=['POST'])
+def import_books_from_frappe():
+    title = request.form.get('title')
+    category = request.form.get('category')
+    try:
+        price = float(request.form.get('price'))
+    except (TypeError, ValueError):
+        flash("Invalid price provided", category='danger')
+        return redirect(url_for('book_bp.books_page'))
+
+    try:
+        response = requests.get(f"https://frappe.io/api/method/frappe-library?page=1&title={title}")
+        books_data = response.json()['message']
+
+        imported_count = 0
+        for book_data in books_data:
+            # Check for existing book by title and author
+            exists = Book.query.filter_by(
+                title=book_data['title'],
+                author=book_data['authors']
+            ).first()
+
+            if not exists:
+                new_book = Book(
+                    title=book_data['title'],
+                    isbn=book_data['isbn'],
+                    author=book_data['authors'],
+                    category=category,          # Add category
+                    price=price,                # Add price
+                    stock=20,
+                    borrow_stock=20
+                )
+                db.session.add(new_book)
+                imported_count += 1
+
+        db.session.commit()
+        flash(f"Imported {imported_count} new books", category="success")
+    except Exception as e:
+        flash(f"Import error: {str(e)}", category="danger")
+
     return redirect(url_for('book_bp.books_page'))

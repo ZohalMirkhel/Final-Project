@@ -1,8 +1,8 @@
 """Initial migration
 
-Revision ID: a5976dd9ee34
+Revision ID: eb9be4a76a40
 Revises: 
-Create Date: 2025-05-31 15:43:05.017719
+Create Date: 2025-06-05 16:01:14.025181
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'a5976dd9ee34'
+revision = 'eb9be4a76a40'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -28,6 +28,7 @@ def upgrade():
     sa.Column('borrow_stock', sa.Integer(), nullable=True),
     sa.Column('member_count', sa.Integer(), nullable=True),
     sa.Column('returned', sa.Boolean(), nullable=True),
+    sa.Column('sales_count', sa.Integer(), nullable=True),
     sa.Column('price', sa.Float(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
@@ -36,8 +37,11 @@ def upgrade():
     sa.Column('name', sa.String(), nullable=False),
     sa.Column('member_name', sa.String(), nullable=False),
     sa.Column('phone_number', sa.String(), nullable=False),
-    sa.Column('to_pay', sa.Integer(), nullable=True),
-    sa.Column('total_paid', sa.Integer(), nullable=True),
+    sa.Column('membership_expiry', sa.DateTime(), nullable=True),
+    sa.Column('membership_status', sa.String(length=20), nullable=True),
+    sa.Column('cancellation_date', sa.DateTime(), nullable=True),
+    sa.Column('refund_amount', sa.Float(), nullable=True),
+    sa.Column('membership_start', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('member_name'),
     sa.UniqueConstraint('phone_number')
@@ -46,6 +50,8 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('member_id', sa.Integer(), nullable=True),
     sa.Column('book_id', sa.Integer(), nullable=True),
+    sa.Column('borrowed_date', sa.DateTime(), nullable=True),
+    sa.Column('due_date', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['book_id'], ['book.id'], ),
     sa.ForeignKeyConstraint(['member_id'], ['member.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -84,11 +90,11 @@ def upgrade():
     )
     op.create_table('transaction',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('book_name', sa.String(), nullable=True),
+    sa.Column('book_name', sa.String(length=100), nullable=False),
     sa.Column('member_name', sa.String(), nullable=True),
     sa.Column('type_of_transaction', sa.String(length=7), nullable=False),
     sa.Column('date', sa.Date(), nullable=True),
-    sa.Column('amount', sa.Integer(), nullable=True),
+    sa.Column('amount', sa.Float(), nullable=True),
     sa.Column('book_id', sa.Integer(), nullable=True),
     sa.Column('member_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['book_id'], ['book.id'], ),

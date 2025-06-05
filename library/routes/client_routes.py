@@ -102,6 +102,7 @@ def checkout_cart():
             # Borrow logic
             if item.book and item.book.available:
                 item.book.available = False
+                item.book.member_count = item.book.member_count + 1 if item.book.member_count else 1
                 checkout = Checkout(
                     user_id=current_user.id,
                     book_id=item.book.id,

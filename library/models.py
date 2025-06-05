@@ -7,9 +7,14 @@ class Member(db.Model):
     name = db.Column(db.String(), nullable=False)
     member_name = db.Column(db.String(), nullable=False, unique=True)
     phone_number = db.Column(db.String(), nullable=False, unique=True)
-    to_pay = db.Column(db.Integer(), default=0)
-    total_paid = db.Column(db.Integer(), default=0)
+    membership_expiry = db.Column(db.DateTime, nullable=True)
+    membership_status = db.Column(db.String(20), default='inactive')
+    cancellation_date = db.Column(db.DateTime, nullable=True)
+    refund_amount = db.Column(db.Float, default=0.0)
+    membership_start = db.Column(db.DateTime, default=datetime.utcnow)
+    membership_fee = db.Column(db.Float, default=20.0)
     borrowed = db.relationship('Book', secondary='book_borrow', backref='borrower', lazy='dynamic')
+
 
 
 class Book(db.Model):
@@ -42,7 +47,7 @@ class Book_borrowed(db.Model):
 
 class Transaction(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
-    book_name = db.Column(db.String())
+    book_name = db.Column(db.String(100), nullable=False, default='')
     member_name = db.Column(db.String())
     type_of_transaction = db.Column(db.String(length=7), nullable=False)
     date = db.Column(db.Date())
@@ -64,7 +69,6 @@ class Checkout(db.Model):
     checkout_date = db.Column(db.DateTime, default=datetime.utcnow)
     return_date = db.Column(db.DateTime, nullable=True)
     due_date = db.Column(db.DateTime, nullable=True)  # Added due_date field
-
     member = db.relationship('Member', backref='checkouts')
     book = db.relationship('Book', backref='checkouts')
 

@@ -41,7 +41,7 @@
                     <tr>
                         <th scope="row" class="table-id">
                             {{ transaction.id }}</th>
-                        <td>{{ transaction.book_name[0:40]}}</td>
+                        <td>{{ transaction.book_name | default('', true) | truncate(40) }}</td>
                         <td>{{ transaction.member_name }}</td>
                         <td>{{ transaction.type_of_transaction }}</td>
                         <td>{{ transaction.date }}</td>

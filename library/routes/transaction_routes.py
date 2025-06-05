@@ -13,9 +13,13 @@ transactions_bp = Blueprint('transactions_bp', __name__)
 # Route: Transactions Page
 @transactions_bp.route('/transactions')
 def transactions_page():
-    transaction = Transaction.query.order_by('id').all()
+    transaction = Transaction.query.filter(
+        Transaction.type_of_transaction != 'membership').all()
     books_to_borrow = Book.query.filter(Book.borrow_stock > 0).all()
-    members_can_borrows = Member.query.filter(Member.to_pay < 500).all()
+    members_can_borrows = Member.query.filter(
+        Member.membership_status == 'active',
+        Member.membership_expiry > datetime.utcnow()
+    ).all()
     books_for_sale = Book.query.filter(Book.stock > 0).all()
     books_to_return = Book.query.filter(Book.borrower).all()
     return render_template('transactions/transactions.html',
@@ -55,6 +59,10 @@ def borrow_book():
             flash("No copies available for borrowing", category='danger')
             return redirect_back()
 
+        if member.membership_status != 'active' or member.membership_expiry < datetime.utcnow():
+            flash("Membership has expired. Please renew to borrow books.", category='danger')
+            return redirect_back()
+
         # Calculate due date (14 days from now)
         due_date = datetime.utcnow() + timedelta(days=14)
 
@@ -69,6 +77,7 @@ def borrow_book():
 
         # Update book stock
         book.borrow_stock -= 1
+        book.member_count = book.member_count + 1 if book.member_count else 1
 
         # Create transaction record
         borrow_transaction = Transaction(
@@ -97,6 +106,9 @@ def return_book():
     try:
         member_id = request.form.get("member_name")
         book_id = request.form.get("book_name")
+
+        borrow_fee = 0
+        late_fee = 0
 
         # Validate inputs
         if not member_id or not member_id.isdigit():
@@ -127,11 +139,9 @@ def return_book():
             return redirect_back()
 
         # Calculate late fee if applicable
-        late_fee = 0
         if datetime.utcnow() > borrow_record.due_date:
             days_late = (datetime.utcnow() - borrow_record.due_date).days
-            late_fee = days_late * 10  # $10 per day late
-            member.to_pay += late_fee
+            late_fee = days_late * 10
 
         # Remove borrow record
         db.session.delete(borrow_record)
@@ -225,8 +235,6 @@ def sell_book():
             book_id=book.id,
             member_id=member.id
         )
-
-        member.to_pay += price
 
         db.session.add(sale_transaction)
         db.session.commit()

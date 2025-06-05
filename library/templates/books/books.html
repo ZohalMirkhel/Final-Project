@@ -33,6 +33,8 @@
                     <th scope="col">Name</th>
                     <th scope="col">ISBN</th>
                     <th scope="col">Author</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Price</th>
                     <th scope="col">Stock</th>
                     <th scope="col"></th>
                 </tr>
@@ -46,6 +48,8 @@
                         <td>{{ book.title }}</td>
                         <td>{{ book.isbn }}</td>
                         <td>{{ book.author }}</td>
+                        <td>{{ book.category }}</td>
+                        <td>{{ book.price }}</td>
                         <td>{{ book.borrow_stock }}</td>
                         <td class="action">
                             <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal-{{book.id}}">
