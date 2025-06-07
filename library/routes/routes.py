@@ -3,11 +3,16 @@ import json
 from flask import Blueprint, render_template
 from sqlalchemy import desc
 from datetime import datetime
+from library.models import Feedback
 
 from library.forms import book_form, member_form
 from library.models import Book, Member
 
 routes_bp = Blueprint('routes_bp', __name__)
+
+@routes_bp.route('/')
+def welcome():
+    return render_template('intro.html')
 
 @routes_bp.route('/', methods=['GET', 'POST'])
 @routes_bp.route('/home')
@@ -34,22 +39,19 @@ def report_page():
     books = Book.query.all()
     members = Member.query.all()
 
-    # Existing code for borrowed books
     popular_books_title = []
     books_count = []
 
-    # New code for sold books
     sold_books_titles = []
     sold_books_counts = []
 
-    # Existing code for paying members
     member_paying_most = []
     member_paid = []
 
     # Get top borrowed books
     popular_books = Book.query.order_by(desc(Book.member_count)).limit(10).all()
 
-    # Get top sold books (new)
+    # Get top sold books
     top_sold_books = Book.query.order_by(desc(Book.sales_count)).limit(10).all()
 
     # Process borrowed books data
@@ -58,19 +60,18 @@ def report_page():
             popular_books_title.append(book.title[0:20])
             books_count.append(book.member_count)
 
-    # Process sold books data (new)
+    # Process sold books data
     for book in top_sold_books:
         if book.sales_count and book.sales_count > 0:
             sold_books_titles.append(book.title[:20])
             sold_books_counts.append(book.sales_count)
 
-    # Convert to JSON for JavaScript
     popular_books_title = json.dumps(popular_books_title)
     books_count = json.dumps(books_count)
     member_paying_most = json.dumps(member_paying_most)
     member_paid = json.dumps(member_paid)
-    sold_books_titles = json.dumps(sold_books_titles)  # New
-    sold_books_counts = json.dumps(sold_books_counts)  # New
+    sold_books_titles = json.dumps(sold_books_titles)
+    sold_books_counts = json.dumps(sold_books_counts)
 
     return render_template("reports.html",
                            members=len(members),
@@ -83,6 +84,5 @@ def report_page():
                            sold_books_counts=sold_books_counts)
 
 @routes_bp.route('/feedbacks')
-def view_feedbacks():
-    return render_template('admin/feedbacks.html',
-                          feedbacks=Feedback.query.all())
+def feedbacks():
+    return render_template('client/feedbacks.html', feedbacks=Feedback.query.all())

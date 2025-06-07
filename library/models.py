@@ -1,8 +1,9 @@
 from datetime import datetime
+from flask_login import UserMixin
 from library import db
 
 
-class Member(db.Model):
+class Member(UserMixin, db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(), nullable=False)
     member_name = db.Column(db.String(), nullable=False, unique=True)
@@ -13,7 +14,12 @@ class Member(db.Model):
     refund_amount = db.Column(db.Float, default=0.0)
     membership_start = db.Column(db.DateTime, default=datetime.utcnow)
     membership_fee = db.Column(db.Float, default=20.0)
-    borrowed = db.relationship('Book', secondary='book_borrow', backref='borrower', lazy='dynamic')
+    borrowed = db.relationship('Book', secondary='book_borrow',
+                               backref='borrower', lazy='dynamic',
+                               overlaps="borrows,borrow_records")
+
+    def get_id(self):
+        return str(self.id)
 
 
 
@@ -29,6 +35,7 @@ class Book(db.Model):
     returned = db.Column(db.Boolean(), default=False)
     sales_count = db.Column(db.Integer, default=0)
     price = db.Column(db.Float, default=0.0)
+    available = db.Column(db.Boolean(), default=True)
 
 
 class Book_borrowed(db.Model):
@@ -41,8 +48,10 @@ class Book_borrowed(db.Model):
     due_date = db.Column(db.DateTime)
 
     # Add these relationships
-    member = db.relationship('Member', backref='borrows')
-    book = db.relationship('Book', backref='borrow_records')
+    member = db.relationship('Member', backref='borrows',
+                             overlaps="borrowed,borrower,borrow_records")
+    book = db.relationship('Book', backref='borrow_records',
+                           overlaps="borrowed,borrower,borrows")
 
 
 class Transaction(db.Model):
@@ -68,7 +77,7 @@ class Checkout(db.Model):
     book_id = db.Column(db.Integer, db.ForeignKey('book.id'), nullable=False)
     checkout_date = db.Column(db.DateTime, default=datetime.utcnow)
     return_date = db.Column(db.DateTime, nullable=True)
-    due_date = db.Column(db.DateTime, nullable=True)  # Added due_date field
+    due_date = db.Column(db.DateTime, nullable=True)
     member = db.relationship('Member', backref='checkouts')
     book = db.relationship('Book', backref='checkouts')
 
@@ -94,3 +103,15 @@ class Cart(db.Model):
 
     member = db.relationship('Member', backref='cart_items')
     book = db.relationship('Book', backref='in_carts')
+
+
+# Add to models.py
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    phone = db.Column(db.String(20), nullable=False, unique=True)
+    email = db.Column(db.String(100), nullable=False, unique=True)
+    password = db.Column(db.String(100), nullable=False)
+    address = db.Column(db.String(200), nullable=False)
+    role = db.Column(db.String(20), nullable=False)  # 'admin' or 'user'
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)

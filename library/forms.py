@@ -53,3 +53,8 @@ class FeedbackForm(FlaskForm):
                                           (3, '3 Stars'), (4, '4 Stars'),
                                           (5, '5 Stars')], coerce=int)
     submit = SubmitField('Submit')
+
+#User model validation
+def validate_role(self, role_field):
+    if role_field.data not in ['admin', 'user', 'customer']:
+        raise ValidationError('Invalid role selected')

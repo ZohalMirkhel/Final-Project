@@ -1,7 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, url_for
 from flask_login import login_required, current_user
-from datetime import datetime
-from library.models import Book, Checkout
+from datetime import datetime, date
+from flask import flash
+from library.models import Book, Checkout, Cart, Feedback, Transaction
+from library.forms import FeedbackForm
 from library import db
 client = Blueprint('client', __name__)
 
@@ -38,6 +40,12 @@ def catalog():
 def profile():
     return render_template('client/profile.html', member=current_user)
 
+
+@client.route('/history')
+@login_required
+def history():
+    checkouts = Checkout.query.filter_by(member_id=current_user.id).all()
+    return render_template('client/history.html', checkouts=checkouts)
 
 # Add to cart
 @client.route('/add-to-cart/<int:book_id>', methods=['POST'])
@@ -109,20 +117,18 @@ def checkout_cart():
                     checkout_date=datetime.utcnow()
                 )
                 db.session.add(checkout)
-        elif item.action == 'buy':
-            # Buy logic
-            if item.book and item.book.stock > 0:
-                item.book.stock -= 1
-                sale_transaction = Transaction(
-                    book_name=item.book.title,
-                    member_name=current_user.member_name,
-                    type_of_transaction="sale",
-                    amount=item.book.price,
-                    date=date.today()
-                )
-                db.session.add(sale_transaction)
+            elif item.action == 'buy':
+                if item.book and item.book.stock > 0:
+                    item.book.stock -= 1
+                    sale_transaction = Transaction(
+                        book_id=item.book.id,
+                        member_id=current_user.id,
+                        type_of_transaction="sale",
+                        amount=item.book.price,
+                        date=date.today()
+                    )
+                    db.session.add(sale_transaction)
 
-        # Remove from cart
         db.session.delete(item)
 
     db.session.commit()
@@ -134,15 +140,13 @@ def checkout_cart():
 @client.route('/my-books')
 @login_required
 def my_books():
-    # Borrowed books (not returned)
     borrowed = Checkout.query.filter_by(
-        user_id=current_user.id,
+        member_id=current_user.id,
         return_date=None
     ).all()
 
-    # Purchased books
     purchased = Transaction.query.filter_by(
-        member_name=current_user.member_name,
+        member_id=current_user.id,
         type_of_transaction="sale"
     ).all()
 
@@ -169,9 +173,14 @@ def feedback():
     return render_template('client/feedback.html', form=form)
 
 
-# View all feedbacks
+
 @client.route('/feedbacks')
 @login_required
 def feedbacks():
-    all_feedbacks = Feedback.query.order_by(Feedback.created_at.desc()).all()
-    return render_template('client/feedbacks.html', feedbacks=all_feedbacks)
+    feedbacks = Feedback.query.all()
+    return render_template('client/feedbacks.html', feedbacks=feedbacks)
+
+@client.route('/home')
+@login_required
+def client_home():
+    return render_template('client_home.html')

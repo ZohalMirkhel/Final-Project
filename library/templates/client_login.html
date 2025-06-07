@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Readers  Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        body {
+            background-image: url('static/images/3.jpg');
+            background-size: cover;
+            background-position: center;
+            margin: 0;
+            padding: 50px;
+            font-family: Georgia, serif;
+        }
+
+        form {
+            background-color: rgba(255, 255, 255, 0.5);
+            padding: 50px;
+            border-radius: 20px;
+            margin: 50px auto;
+            max-width: 300px;
+        }
+
+        form h2 {
+            font-size: 2em;
+            text-align: center;
+        }
+
+        form label {
+            display: block;
+            margin: 10px 0;
+        }
+
+        form input, form select {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        }
+
+        form .button-container {
+            text-align: center;
+        }
+
+        form button {
+            background-color: #3498db;
+            color: white;
+            padding: 15px 30px;
+            margin-right: 20px;
+            border: none;
+            border-radius: 5px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        form button:hover {
+            background-color: #82EE48;
+        }
+    </style>
+</head>
+<body>
+
+    <form action="{{ url_for('login_bp.client_login') }}" method="post">
+        <h2>Readers Login</h2>
+
+        <label for="email">Email:</label>
+        <input type="text" id="email" name="email" required>
+
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+
+        <div class="button-container">
+            <button type="submit">Login</button>
+            <button type="button" onclick="window.location.href='{{ url_for('login_bp.registration_form') }}'">Register</button>
+
+        </div>
+    </form>
+
+</body>
+</html>
