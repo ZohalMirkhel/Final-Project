@@ -1,7 +1,8 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, IntegerField, SubmitField, TextAreaField, SelectField, FloatField, PasswordField, BooleanField
-from wtforms.validators import Length, DataRequired, ValidationError, InputRequired, NumberRange, Email
-from library.models import Member, Book, Transaction
+from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, Optional, NumberRange, InputRequired
+from library.models import Member, Book, Transaction, User
+from flask_login import current_user
 from wtforms.fields import EmailField
 
 # form for creating and updating members
@@ -68,6 +69,49 @@ class MembershipForm(FlaskForm):
         (12, '1 Year - $240')
     ], coerce=int)
     submit = SubmitField('Buy/Renew Membership')
+
+
+class ProfileForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired(), Length(min=2, max=100)])
+    email = EmailField('Email', validators=[DataRequired(), Email()])
+    phone = StringField('Phone', validators=[DataRequired()])
+    address = StringField('Address', validators=[DataRequired(), Length(min=5, max=200)])
+    member_name = StringField('Username', validators=[Optional(), Length(min=2, max=30)])
+    submit = SubmitField('Update Profile')
+
+    # Custom validation to ensure unique email/phone
+    def validate_email(self, email):
+        if email.data != current_user.email:
+            user = User.query.filter_by(email=email.data).first()
+            if user:
+                raise ValidationError('That email is already in use!')
+
+    def validate_phone(self, phone):
+        if phone.data != current_user.phone:
+            user = User.query.filter_by(phone=phone.data).first()
+            if user:
+                raise ValidationError('That phone number is already in use!')
+
+# Add to forms.py
+class RegistrationForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired(), Length(min=2, max=100)])
+    phone = StringField('Phone', validators=[DataRequired()])
+    email = EmailField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    address = StringField('Address', validators=[DataRequired(), Length(min=5, max=200)])
+    role = SelectField('Role', choices=[('customer', 'Customer')])
+    submit = SubmitField('Register')
+
+    def validate_phone(self, phone):
+        user = User.query.filter_by(phone=phone.data).first()
+        if user:
+            raise ValidationError('That phone number is already in use!')
+
+    def validate_email(self, email):
+        user = User.query.filter_by(email=email.data).first()
+        if user:
+            raise ValidationError('That email is already in use!')
+
 
 class ReturnBookForm(FlaskForm):
     book_id = SelectField('Book', coerce=int)

@@ -1,0 +1,114 @@
+{% extends 'base_client.html' %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="mb-4">Your Profile</h1>
+    
+    <!-- Profile Information -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h2>Personal Information</h2>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('client.profile') }}">
+                {{ form.hidden_tag() }}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Full Name</label>
+                        {{ form.name(class="form-control", value=current_user.name) }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Email</label>
+                        {{ form.email(class="form-control", value=current_user.email) }}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Phone Number</label>
+                        {{ form.phone(class="form-control", value=current_user.phone) }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Address</label>
+                        {{ form.address(class="form-control", value=current_user.address) }}
+                    </div>
+                </div>
+                
+                <!-- Replace the member name display section with this -->
+{% if member %}
+<div class="row mb-3">
+    <div class="col-md-6">
+        <label class="form-label">Username</label>
+        {{ form.member_name(class="form-control") }}
+    </div>
+    <div class="col-md-6">
+        <label class="form-label">Membership Status</label>
+        <input type="text" class="form-control"
+            value="{% if member.is_active_member() %}Active until {{ member.membership_expiry.strftime('%Y-%m-%d') }}{% else %}Inactive{% endif %}"
+            readonly>
+    </div>
+</div>
+{% endif %}
+                {% if member %}
+<div class="col-md-6">
+    <label class="form-label">Membership Fee Per Month</label>
+    <input type="text" class="form-control"
+        value="${{ '%.2f' | format(membership_fee) }}"
+        readonly>
+</div>
+{% endif %}
+                <button type="submit" class="btn btn-primary mt-3">Update Profile</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Account Actions -->
+    <div class="card">
+        <div class="card-header bg-danger text-white">
+            <h2>Account Actions</h2>
+        </div>
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <button class="btn btn-outline-dark" onclick="location.href='{{ url_for('login_bp.client_logout') }}'">
+                    Logout
+                </button>
+                
+                <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                    Delete Account
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Account Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirm Account Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="lead">Are you sure you want to permanently delete your account?</p>
+                {% if member and member.is_active_member() %}
+                <div class="alert alert-warning">
+                    <strong>Note:</strong> Your active membership will be canceled and you'll receive a refund of 
+                    $<span id="refundAmount">{{ refund_amount|round(2) }}</span> for unused time.
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{{ url_for('client.delete_account') }}" method="POST">
+                    {{ form.hidden_tag() }}
+                    <button type="submit" class="btn btn-danger">Delete Account Permanently</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

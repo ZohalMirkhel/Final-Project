@@ -79,6 +79,7 @@
 <body>
 
     <form action="{{ url_for('login_bp.registration_form') }}" method="post" id="registrationForm">
+    {{ form.hidden_tag() }}
         <h2>Register here</h2>
 
         <label for="name"><strong>Name:</strong></label>

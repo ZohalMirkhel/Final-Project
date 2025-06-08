@@ -2,7 +2,7 @@ from flask import Blueprint, session, request, redirect, url_for, flash, render_
 from werkzeug.security import generate_password_hash, check_password_hash
 from library.models import User, db
 from flask_login import login_user, logout_user, login_required, current_user
-from library.forms import LoginForm
+from library.forms import LoginForm, RegistrationForm
 
 # Create the blueprint
 client_bp = Blueprint('client', __name__, url_prefix='/client')
@@ -54,28 +54,24 @@ def client_login():
 
 @login_bp.route('/register', methods=['GET', 'POST'])
 def registration_form():
-    if request.method == 'POST':
-        name = request.form['name']
-        phone = request.form['phone']
-        email = request.form['email']
-        password = request.form['password']
-        address = request.form['address']
-        role = request.form['role']
-
-        print(f"[DEBUG] Registering user: {email}, role: {role}")
-
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        new_user = User(
+            name=form.name.data,
+            phone=form.phone.data,
+            email=form.email.data,
+            password=generate_password_hash(form.password.data),
+            address=form.address.data,
+            role=form.role.data
+        )
         try:
-            new_user = User(name=name, phone=phone, email=email, password=generate_password_hash(password), address=address, role=role)
             db.session.add(new_user)
             db.session.commit()
-            print("[DEBUG] Registration successful")
             return redirect(url_for('login_bp.registration_success'))
         except Exception as e:
             db.session.rollback()
-            print(f"[ERROR] Registration failed: {str(e)}")
-            flash("Registration failed. Possibly due to duplicate email/phone.", "error")
-
-    return render_template('registration_form.html')
+            flash("Registration failed: " + str(e), "error")
+    return render_template('registration_form.html', form=form)
 
 
 @login_bp.route('/registration-success', methods=['GET'])

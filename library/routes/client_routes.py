@@ -1,11 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from flask_login import login_required, current_user
+from flask_login import login_required, current_user, logout_user
 from datetime import datetime, date, timedelta
 from flask import flash
-from library.models import Book, Checkout, Cart, Feedback, Transaction, Member, Book_borrowed
-from library.forms import FeedbackForm
-from library.forms import EmptyForm
-from library.forms import MembershipForm, ReturnBookForm
+from library.models import Book, Checkout, Cart, Feedback, Transaction, Member, Book_borrowed, User
+from library.forms import EmptyForm, ProfileForm, MembershipForm, ReturnBookForm, FeedbackForm
 from sqlalchemy import or_
 from library import db
 client = Blueprint('client', __name__)
@@ -137,12 +135,107 @@ def client_home():
     )
 
 # Profile page
-@client.route('/profile')
+@client.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
-    return render_template('client/profile.html', member=current_user)
+    form = ProfileForm()  # ← Add this line
+    member = Member.query.filter_by(user_id=current_user.id).first()
+
+    membership_fee = member.membership_fee if member else 0
+    refund_amount = 0.0
+
+    # Calculate refund if member is active
+    if member and member.is_active_member():
+        total_days = (member.membership_expiry - member.membership_start).days
+        used_days = (datetime.utcnow() - member.membership_start).days
+        unused_days = max(0, total_days - used_days)
+        refund_amount = (unused_days / total_days) * (member.membership_fee * (total_days / 30)) * 0.5
+
+    if form.validate_on_submit():
+        # Update user information
+        current_user.name = form.name.data
+        current_user.email = form.email.data
+        current_user.phone = form.phone.data
+        current_user.address = form.address.data
+
+        if member:
+            if form.member_name.data != member.member_name:
+                existing_member = Member.query.filter(
+                    Member.member_name == form.member_name.data,
+                    Member.id != member.id
+                ).first()
+                if existing_member:
+                    flash('That username is already taken. Please choose another.', 'danger')
+                    return redirect(url_for('client.profile'))
+
+                member.member_name = form.member_name.data
+            member.name = form.name.data
+
+        db.session.commit()
+        flash('Profile updated successfully!', 'success')
+        return redirect(url_for('client.profile'))
+
+    # Pre-fill form with current data
+    form.name.data = current_user.name
+    form.email.data = current_user.email
+    form.phone.data = current_user.phone
+    form.address.data = current_user.address
+
+    if member:
+        form.member_name.data = member.member_name
+
+    return render_template('client/profile.html',
+                           form=form,
+                           member=member,
+                           refund_amount=refund_amount,
+                           membership_fee=membership_fee)
 
 
+@client.route('/delete-account', methods=['POST'])
+@login_required
+def delete_account():
+    member = Member.query.filter_by(user_id=current_user.id).first()
+
+    # Calculate refund if active member
+    refund_amount = 0.0
+    if member and member.is_active_member():
+        total_days = (member.membership_expiry - member.membership_start).days
+        used_days = (datetime.utcnow() - member.membership_start).days
+        unused_days = max(0, total_days - used_days)
+        refund_amount = (unused_days / total_days) * (member.membership_fee * (total_days / 30)) * 0.5
+
+        # Record refund transaction
+        transaction = Transaction(
+            book_name="Membership Refund",
+            type_of_transaction="refund",
+            amount=-refund_amount,
+            date=date.today(),
+            user_id=current_user.id
+        )
+        db.session.add(transaction)
+
+    # Delete all related records
+    if member:
+        # Delete only this member's records
+        Checkout.query.filter_by(member_id=member.id).delete()
+        Feedback.query.filter_by(member_id=member.id).delete()
+        Transaction.query.filter_by(member_id=member.id).delete()
+        db.session.delete(member)
+
+        # Delete only current user's records
+    Cart.query.filter_by(user_id=current_user.id).delete()
+    Feedback.query.filter_by(user_id=current_user.id).delete()
+    Transaction.query.filter_by(user_id=current_user.id).delete()
+
+    # Only delete current user
+    user_to_delete = User.query.get(current_user.id)
+    if user_to_delete:
+        db.session.delete(user_to_delete)
+
+    db.session.commit()
+    logout_user()
+    flash('Your account has been permanently deleted', 'info')
+    return redirect(url_for('login_bp.client_login'))
 
 @client.route('/history')
 @login_required

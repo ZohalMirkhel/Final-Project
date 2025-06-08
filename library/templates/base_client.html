@@ -21,6 +21,7 @@
           <li><a href="{{ url_for('client.history') }}" class="nav-link px-2 link-dark">History</a></li>
           <li><a href="{{ url_for('client.feedback') }}" class="nav-link px-2 link-dark">Feedback</a></li>
           <li><a href="{{ url_for('client.view_cart') }}" class="nav-link px-2 link-dark">Cart</a></li>
+          <li><a href="{{ url_for('client.profile') }}" class="nav-link px-2 link-dark">Profile</a></li>
           <div class="text-end">
             {% if current_user.is_authenticated %}
             <a href="{{ url_for('login_bp.client_logout') }}" class="btn btn-outline-dark me-2">Logout</a>
