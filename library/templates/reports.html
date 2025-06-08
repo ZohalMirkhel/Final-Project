@@ -115,6 +115,8 @@
             document.getElementById('price').value = bookPrice || '0';
         });
     });
+    sold_books_titles = JSON.parse({{ sold_books_titles | tojson }});
+    sold_books_counts = JSON.parse({{ sold_books_counts | tojson }});
     </script>
 
 {% endblock %}

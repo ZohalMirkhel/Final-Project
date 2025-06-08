@@ -6,6 +6,7 @@ from flask import jsonify
 
 from library import db
 from library.models import Book, Member, Transaction, Book_borrowed
+from sqlalchemy import or_
 
 # Define the blueprint
 transactions_bp = Blueprint('transactions_bp', __name__)
@@ -13,15 +14,32 @@ transactions_bp = Blueprint('transactions_bp', __name__)
 # Route: Transactions Page
 @transactions_bp.route('/transactions')
 def transactions_page():
-    transaction = Transaction.query.filter(
-        Transaction.type_of_transaction != 'membership').all()
+    transaction = Transaction.query.options(
+        db.joinedload(Transaction.book)  # Eager load book relationship
+    ).all()
     books_to_borrow = Book.query.filter(Book.borrow_stock > 0).all()
     members_can_borrows = Member.query.filter(
         Member.membership_status == 'active',
         Member.membership_expiry > datetime.utcnow()
     ).all()
     books_for_sale = Book.query.filter(Book.stock > 0).all()
-    books_to_return = Book.query.filter(Book.borrower).all()
+
+    # Fix: Get books that are currently borrowed (both admin and client)
+    from library.models import Book_borrowed, Checkout
+
+    # Get admin borrows
+    admin_borrowed_books = db.session.query(Book_borrowed.book_id).filter(
+        Book_borrowed.return_date.is_(None)
+    ).distinct()
+
+    # Get client borrows
+    client_borrowed_books = db.session.query(Checkout.book_id).filter(
+        Checkout.return_date.is_(None)
+    ).distinct()
+
+    # Combine both
+    all_borrowed_book_ids = admin_borrowed_books.union(client_borrowed_books).subquery()
+    books_to_return = Book.query.filter(Book.id.in_(all_borrowed_book_ids)).all()
     return render_template('transactions/transactions.html',
                            transactions=transaction, length=len(transaction),
                            books_to_borrow=books_to_borrow,
@@ -140,15 +158,19 @@ def return_book():
         # Find borrow record
         borrow_record = Book_borrowed.query.filter_by(
             book_id=book.id,
-            member_id=member.id
+            member_id=member.id,
+            return_date=None
         ).first()
 
         if not borrow_record:
-            flash("This member hasn't borrowed this book", category='danger')
-            return redirect_back()
+            borrow_record = Checkout.query.filter_by(
+                book_id=book.id,
+                member_id=member.id,
+                return_date=None
+            ).first()
 
         # Calculate late fee if applicable
-        if datetime.utcnow() > borrow_record.due_date:
+        if borrow_record and datetime.utcnow() > borrow_record.due_date:
             days_late = (datetime.utcnow() - borrow_record.due_date).days
             late_fee = days_late * 10
 
@@ -192,14 +214,26 @@ def get_book_details(book_id):
         return jsonify({'error': 'Book not found'}), 404
 
     borrow_records = []
-    # Use the relationship to get borrow records
-    for borrow in book.borrow_records:
-        borrow_records.append({
-            'id': borrow.member.id,
-            'member_name': borrow.member.member_name,
-            'borrowed_date': borrow.borrowed_date.strftime('%Y-%m-%d'),
-            'due_date': borrow.due_date.strftime('%Y-%m-%d')
-        })
+
+    # Admin borrows
+    for borrow in book.admin_borrow_records:
+        if borrow.return_date is None:
+            borrow_records.append({
+                'id': borrow.member.id,
+                'member_name': borrow.member.member_name,
+                'borrowed_date': borrow.borrowed_date.strftime('%Y-%m-%d'),
+                'due_date': borrow.due_date.strftime('%Y-%m-%d')
+            })
+
+    # Client borrows
+    for checkout in book.client_checkouts:
+        if checkout.return_date is None:
+            borrow_records.append({
+                'id': checkout.member.id,
+                'member_name': checkout.member.member_name,
+                'borrowed_date': checkout.checkout_date.strftime('%Y-%m-%d'),
+                'due_date': checkout.due_date.strftime('%Y-%m-%d')
+            })
 
     return jsonify({
         'book_id': book.id,

@@ -2,12 +2,12 @@ from flask import Blueprint, render_template, request, redirect, url_for
 from flask_login import login_required, current_user
 from datetime import datetime, date, timedelta
 from flask import flash
-from library.models import Book, Checkout, Cart, Feedback, Transaction, Member
+from library.models import Book, Checkout, Cart, Feedback, Transaction, Member, Book_borrowed
 from library.forms import FeedbackForm
 from library.forms import EmptyForm
 from library.forms import MembershipForm, ReturnBookForm
+from sqlalchemy import or_
 from library import db
-from flask_wtf.csrf import generate_csrf
 client = Blueprint('client', __name__)
 
 DELIVERY_FEE = 5.0
@@ -52,6 +52,15 @@ def client_home():
     # Check if membership is active and get expiry
     membership_active = False
     membership_expiry = None
+
+    admin_borrowed_books = db.session.query(Book_borrowed.book_id).filter(
+        Book_borrowed.return_date.is_(None)
+    ).distinct()
+
+    # Get client borrows
+    client_borrowed_books = db.session.query(Checkout.book_id).filter(
+        Checkout.return_date.is_(None)
+    ).distinct()
 
     if member:
         membership_active = (
@@ -105,7 +114,7 @@ def client_home():
     membership_form = MembershipForm()
     return_form = ReturnBookForm()
     return_form.book_id.choices = [
-        (checkout.book.id, f"{checkout.book.title} (Due: {checkout.due_date.strftime('%Y-%m-%d')})")
+        (checkout.book.id, f"{checkout.book.title} (Due: { checkout.due_date.strftime('%Y-%m-%d') if checkout.due_date else 'N/A' })")
         for checkout, book in borrowed_books
     ] or [(0, 'No books to return')]
 
@@ -126,7 +135,6 @@ def client_home():
         return_form=return_form,
         datetime=datetime
     )
-
 
 # Profile page
 @client.route('/profile')
@@ -261,11 +269,13 @@ def checkout_cart():
     cart_items = Cart.query.filter_by(user_id=current_user.id).all()
     borrow_items_in_cart = [item for item in cart_items if item.action == 'borrow']
     num_borrow_in_cart = len(borrow_items_in_cart)
+    has_borrow_items = num_borrow_in_cart > 0
+    total_amount = 0
 
     member = Member.query.filter_by(user_id=current_user.id).first()
     is_active_member_status = member and member.is_active_member()
 
-    # NEW: Check borrow limit during checkout
+    # Borrow limit check
     if num_borrow_in_cart > 0 and member:
         current_borrowed = Checkout.query.filter_by(
             member_id=member.id,
@@ -278,32 +288,13 @@ def checkout_cart():
                 'danger')
             return redirect(url_for('client.view_cart'))
 
+    # First pass: validate availability
     for item in cart_items:
         if item.action == 'borrow':
-            if item.book.borrow_stock > 0:
-                item.book.borrow_stock -= 1
-                if item.book.borrow_stock == 0:
-                    item.book.available = False
-
-                # Set due date (2 weeks from now)
-                due_date = datetime.utcnow() + timedelta(days=14)
-
-                # Get member record
-                member = Member.query.filter_by(user_id=current_user.id).first()
-
-                checkout = Checkout(
-                    member_id=member.id,  # FIXED HERE
-                    book_id=item.book.id,
-                    checkout_date=datetime.utcnow(),
-                    due_date=due_date
-                )
-                db.session.add(checkout)
-            else:
+            if item.book.borrow_stock < 1:
                 flash(f"Book '{item.book.title}' is not available for borrowing", 'danger')
                 return redirect(url_for('client.view_cart'))
-
         elif item.action == 'buy':
-            has_buy_items = True
             if item.book.stock < 1:
                 flash(f"Book '{item.book.title}' is out of stock", 'danger')
                 return redirect(url_for('client.view_cart'))
@@ -311,73 +302,76 @@ def checkout_cart():
     # Second pass: process items
     for item in cart_items:
         if item.action == 'borrow':
-            # Borrow logic
-            item.book.available = False
+            # Update book availability
+            item.book.borrow_stock -= 1
+            if item.book.borrow_stock == 0:
+                item.book.available = False
+
+            # Update borrow count
             item.book.member_count = item.book.member_count + 1 if item.book.member_count else 1
-            checkout = Checkout(
-                member_id=current_user.id,
+
+            # Set due date (2 weeks from now)
+            due_date = datetime.utcnow() + timedelta(days=14)
+
+            borrow_transaction = Transaction(
+                book_name=item.book.title,
                 book_id=item.book.id,
-                checkout_date=datetime.utcnow()
+                member_id=member.id,
+                member_name=member.member_name,
+                type_of_transaction="borrow",
+                amount=0.0,
+                date=date.today()
+            )
+            db.session.add(borrow_transaction)
+
+            # Create checkout record
+            checkout = Checkout(
+                member_id=member.id,
+                book_id=item.book.id,
+                checkout_date=datetime.utcnow(),
+                due_date=due_date
             )
             db.session.add(checkout)
 
-
         elif item.action == 'buy':
-
+            # Update stock and sales count
             item.book.stock -= 1
+            item.book.sales_count = (item.book.sales_count or 0) + 1
 
-            # Handle member/non-member differently
-
+            # Create transaction
             if current_user.is_member():
-
                 sale_transaction = Transaction(
-
+                    book_name=item.book.title,
                     book_id=item.book.id,
-
                     member_id=current_user.id,
-
                     member_name=current_user.name,
-
                     type_of_transaction="sale",
-
                     amount=item.book.price,
-
                     date=date.today()
-
                 )
-
             else:
-
                 sale_transaction = Transaction(
-
                     book_id=item.book.id,
-
-                    user_id=current_user.id,  # New field
-
+                    user_id=current_user.id,
                     member_name=current_user.name,
-
                     type_of_transaction="sale",
-
                     amount=item.book.price,
-
                     date=date.today()
-
                 )
-
             db.session.add(sale_transaction)
-
             total_amount += item.book.price
 
         db.session.delete(item)
 
-    # Add delivery fee ONLY for borrow transactions
+    # Add delivery fee for borrows
     if has_borrow_items:
         if not is_active_member_status:
             flash("You need an active membership to borrow books", "danger")
             return redirect(url_for('client.view_cart'))
         delivery_transaction = Transaction(
+            book_name="Delivery Fee",
             member_id=current_user.id,
-            member_name=current_user.name,  # Add name
+            member_name=current_user.name,
             type_of_transaction="delivery",
             amount=DELIVERY_FEE,
             date=date.today()
@@ -388,6 +382,7 @@ def checkout_cart():
     db.session.commit()
     flash("Checkout completed successfully", category='success')
     return redirect(url_for('client.my_books'))
+
 
 # My Books page#
 @client.route('/my-books')
@@ -619,7 +614,5 @@ def feedback():
 @client.route('/feedbacks')
 @login_required
 def feedbacks():
-    if current_user.role != 'admin':
-        return redirect(url_for('client.client_home'))
     feedbacks = Feedback.query.all()
     return render_template('client/feedbacks.html', feedbacks=feedbacks)

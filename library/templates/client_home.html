@@ -97,7 +97,7 @@
                         <select class="form-select" name="book_id" required>
                             {% for checkout, book in borrowed_books %}
                             <option value="{{ book.id }}">
-                                {{ book.title }} (Due: {{ checkout.due_date.strftime('%Y-%m-%d') }})
+                                {{ book.title }} (Due: {{ checkout.due_date.strftime('%Y-%m-%d') if checkout.return_date else 'N/A' }})
                             </option>
                             {% else %}
                             <option disabled>No books to return</option>
@@ -161,7 +161,7 @@
                     <li class="list-group-item d-flex justify-content-between align-items-center">
                         {{ book.title }}
                         <span class="badge {% if checkout.due_date and datetime.utcnow() > checkout.due_date %}bg-danger{% else %}bg-info{% endif %}">
-                            Due: {{ checkout.due_date.strftime('%Y-%m-%d') }}
+                            Due: {{ checkout.due_date.strftime('%Y-%m-%d') if checkout.due_date else 'N/A' }}
                         </span>
                     </li>
                     {% endfor %}

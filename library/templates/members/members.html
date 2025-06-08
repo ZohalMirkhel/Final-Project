@@ -111,6 +111,7 @@
 </div>
                                 <div class="modal-body">
                                     <form action="{{ url_for('members_bp.renew_membership', member_id=member.id) }}" method="POST">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <div class="mb-3">
                                             <label class="form-label">Months:</label>
                                             <input type="number" name="months" min="1" value="1" class="form-control">
@@ -136,7 +137,8 @@
             </div>
             <div class="modal-body">
                 <p>Cancel membership for {{ member.name }}?</p>
-                <form action="{{ url_for('members_bp.cancel_membership', member_id=member.id) }}" method="POST" value="{{ csrf_token() }}">
+                <form action="{{ url_for('members_bp.cancel_membership', member_id=member.id) }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
                         <button type="submit" class="btn btn-danger">Yes, Cancel</button>

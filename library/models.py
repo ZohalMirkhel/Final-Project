@@ -16,7 +16,7 @@ class Member(UserMixin, db.Model):
     membership_fee = db.Column(db.Float, default=20.0)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     borrowed = db.relationship('Book', secondary='book_borrow',
-                               backref='borrower', lazy='dynamic',
+                               backref='current_borrowers', lazy='dynamic',
                                overlaps="borrows,borrow_records")
 
     def get_id(self):
@@ -56,12 +56,12 @@ class Book_borrowed(db.Model):
     book_id = db.Column(db.Integer(), db.ForeignKey('book.id'))
     borrowed_date = db.Column(db.DateTime, default=datetime.utcnow)
     due_date = db.Column(db.DateTime)
-
+    return_date = db.Column(db.DateTime, nullable=True)
     # Add these relationships
-    member = db.relationship('Member', backref='borrows',
-                             overlaps="borrowed,borrower,borrow_records")
-    book = db.relationship('Book', backref='borrow_records',
-                           overlaps="borrowed,borrower,borrows")
+    member = db.relationship('Member', backref='admin_borrows',
+                             overlaps="borrowed,current_borrowers,borrow_records")
+    book = db.relationship('Book', backref='admin_borrow_records',
+                           overlaps="borrowed,current_borrowers,borrows")
 
 
 class Transaction(db.Model):
@@ -80,6 +80,7 @@ class Transaction(db.Model):
     user = db.relationship('User', backref='transactions')
 
 
+
 class Checkout(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     member_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=False)
@@ -87,8 +88,8 @@ class Checkout(db.Model):
     checkout_date = db.Column(db.DateTime, default=datetime.utcnow)
     return_date = db.Column(db.DateTime, nullable=True)
     due_date = db.Column(db.DateTime, nullable=True)
-    member = db.relationship('Member', backref=db.backref('checkouts', lazy=True))
-    book = db.relationship('Book', backref=db.backref('checkouts', lazy=True))
+    member = db.relationship('Member', backref='client_borrows')
+    book = db.relationship('Book', backref='client_checkouts')
 
 
 class Feedback(db.Model):

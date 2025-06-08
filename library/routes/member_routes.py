@@ -6,6 +6,7 @@ from library import app, db
 from library.forms import member_form
 from library.models import Book, Member, Transaction
 from datetime import datetime, timedelta, date
+from sqlalchemy import or_
 
 # external imports
 
@@ -32,7 +33,24 @@ def members_page():
         Member.membership_status == 'active',
         Member.membership_expiry > datetime.utcnow()
     ).all()
-    books_to_return = Book.query.filter(Book.borrower).all()
+    books_for_sale = Book.query.filter(Book.stock > 0).all()
+
+    # Fix: Get books that are currently borrowed (both admin and client)
+    from library.models import Book_borrowed, Checkout
+
+    # Get admin borrows
+    admin_borrowed_books = db.session.query(Book_borrowed.book_id).filter(
+        Book_borrowed.return_date.is_(None)
+    ).distinct()
+
+    # Get client borrows
+    client_borrowed_books = db.session.query(Checkout.book_id).filter(
+        Checkout.return_date.is_(None)
+    ).distinct()
+
+    # Combine both
+    all_borrowed_book_ids = admin_borrowed_books.union(client_borrowed_books).subquery()
+    books_to_return = Book.query.filter(Book.id.in_(all_borrowed_book_ids)).all()
     books_for_sale = Book.query.filter(Book.stock > 0).all()
 
     if form_member.validate_on_submit():

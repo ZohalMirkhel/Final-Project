@@ -25,7 +25,7 @@
   {% for checkout, book in current_borrowed %}
   <li>
     {{ book.title }}
-    (Due: {{ checkout.due_date.strftime('%Y-%m-%d') }})
+    (Due: {{ checkout.due_date.strftime('%Y-%m-%d') if checkout.due_date else 'N/A' }})
     <a href="{{ url_for('client.return_book', book_id=book.id) }}">Return</a>
   </li>
   {% endfor %}
@@ -41,7 +41,7 @@
   {% for checkout, book in returned_books %}
   <li>
     {{ book.title }}
-    (Returned on {{ checkout.return_date.strftime('%Y-%m-%d') }})
+    (Returned on {{ checkout.return_date.strftime('%Y-%m-%d') if checkout.return_date else 'N/A' }})
   </li>
   {% endfor %}
 </ul>

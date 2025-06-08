@@ -7,12 +7,12 @@
 {% block content %}
 
 
-    {% with available_books=books_for_sale, endpoint='transactions_bp.sell_book' %}
+    {% with available_books=books_for_sale, endpoint='transactions_bp.sell_book', form=book_form %}
         {% include 'transactions/sell_book_modal.html' %}
     {% endwith %}
 
     {% include 'books/add_book_modal.html' %}
-    {% include 'transactions/return_book_modal.html' %}
+    {% include 'transactions/return_book_modal.html' with context %}
     {% include 'import-books-frappe.html' %}
     {% include 'transactions/borrow_book_modal.html' %}
 

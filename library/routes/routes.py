@@ -6,6 +6,7 @@ from datetime import datetime
 from library.models import Feedback
 from library.forms import book_form, member_form, LoginForm
 from library.models import Book, Member
+from library import app, db
 
 routes_bp = Blueprint('routes_bp', __name__)
 
@@ -18,34 +19,46 @@ def welcome():
 @routes_bp.route('/home')
 @login_required
 def home_page():
-    if current_user.role != 'admin':
-        return redirect(url_for('client.client_home'))
-
     books_to_borrow = Book.query.filter(Book.borrow_stock > 0).all()
     members_can_borrows = Member.query.filter(
         Member.membership_status == 'active',
         Member.membership_expiry > datetime.utcnow()
     ).all()
     books_for_sale = Book.query.filter(Book.stock > 0).all()
-    books_to_return = Book.query.filter(Book.borrower).all()
 
-    return render_template('home.html',
-                           member_form=member_form(),
-                           book_form=book_form(),
-                           books_to_borrow=books_to_borrow,
-                           members_can_borrow=members_can_borrows,
-                           books_for_sale=books_for_sale,
-                           books_to_return=books_to_return,
-                           book=False,
-                           form=LoginForm())
+    # Fix: Get books that are currently borrowed (both admin and client)
+    from library.models import Book_borrowed, Checkout
+
+    # Get admin borrows
+    admin_borrowed_books = db.session.query(Book_borrowed.book_id).filter(
+        Book_borrowed.return_date is None
+    ).distinct()
+
+    # Get client borrows
+    client_borrowed_books = db.session.query(Checkout.book_id).filter(
+        Checkout.return_date is None
+    ).distinct()
+
+    # Combine both
+    all_borrowed_book_ids = admin_borrowed_books.union(client_borrowed_books).subquery()
+    books_to_return = Book.query.filter(Book.id.in_(all_borrowed_book_ids)).all()
+
+    return render_template(
+        'home.html',
+        member_form=member_form(),
+        book_form=book_form(),
+        books_to_borrow=books_to_borrow,
+        members_can_borrow=members_can_borrows,
+        books_for_sale=books_for_sale,
+        books_to_return=books_to_return,
+        book=False,
+        form=LoginForm()
+    )
 
 
 @routes_bp.route('/reports', methods=['GET', 'POST'])
 @login_required
 def report_page():
-    # Redirect non-admin users to client home
-    if current_user.role != 'admin':
-        return redirect(url_for('login_bp.client_home'))
 
     books = Book.query.all()
     members = Member.query.all()

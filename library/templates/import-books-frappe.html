@@ -10,6 +10,7 @@
             </div>
             <div class="modal-body">
                 <form action="./import-from-frappe" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <label>Title</label><br/>
                     <input type="text" name="title" placeholder="Title" required/>
 
