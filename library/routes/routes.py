@@ -1,22 +1,26 @@
 import json
-
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, redirect, url_for
+from flask_login import login_required, current_user
 from sqlalchemy import desc
 from datetime import datetime
 from library.models import Feedback
-
-from library.forms import book_form, member_form
+from library.forms import book_form, member_form, LoginForm
 from library.models import Book, Member
 
 routes_bp = Blueprint('routes_bp', __name__)
+
 
 @routes_bp.route('/')
 def welcome():
     return render_template('intro.html')
 
-@routes_bp.route('/', methods=['GET', 'POST'])
+
 @routes_bp.route('/home')
+@login_required
 def home_page():
+    if current_user.role != 'admin':
+        return redirect(url_for('client.client_home'))
+
     books_to_borrow = Book.query.filter(Book.borrow_stock > 0).all()
     members_can_borrows = Member.query.filter(
         Member.membership_status == 'active',
@@ -24,6 +28,7 @@ def home_page():
     ).all()
     books_for_sale = Book.query.filter(Book.stock > 0).all()
     books_to_return = Book.query.filter(Book.borrower).all()
+
     return render_template('home.html',
                            member_form=member_form(),
                            book_form=book_form(),
@@ -31,11 +36,17 @@ def home_page():
                            members_can_borrow=members_can_borrows,
                            books_for_sale=books_for_sale,
                            books_to_return=books_to_return,
-                           book=False)
+                           book=False,
+                           form=LoginForm())
 
 
 @routes_bp.route('/reports', methods=['GET', 'POST'])
+@login_required
 def report_page():
+    # Redirect non-admin users to client home
+    if current_user.role != 'admin':
+        return redirect(url_for('login_bp.client_home'))
+
     books = Book.query.all()
     members = Member.query.all()
 
@@ -83,6 +94,12 @@ def report_page():
                            sold_books_titles=sold_books_titles,
                            sold_books_counts=sold_books_counts)
 
+
 @routes_bp.route('/feedbacks')
+@login_required
 def feedbacks():
+    # Redirect non-admin users to client feedbacks
+    if current_user.role != 'admin':
+        return redirect(url_for('client.feedbacks'))
+
     return render_template('client/feedbacks.html', feedbacks=Feedback.query.all())

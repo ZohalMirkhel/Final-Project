@@ -1,18 +1,32 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
 {% block content %}
-<h2>User Feedbacks</h2>
+<h2>All Feedbacks</h2>
+
 {% if feedbacks %}
-<ul>
-  {% for feedback in feedbacks %}
-  <li>
-    <strong>{{ feedback.member.member_name }}</strong>
-    <p>{{ feedback.content }}</p>
-    <small>Rating: {{ feedback.rating }}/5 - {{ feedback.created_at }}</small>
-  </li>
-  {% endfor %}
-</ul>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Member</th>
+      <th>Book</th>
+      <th>Rating</th>
+      <th>Feedback</th>
+      <th>Date</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for fb in feedbacks %}
+    <tr>
+      <td>{{ fb.member.name if fb.member else 'N/A' }}</td>
+      <td>{{ fb.book.title if fb.book else 'General Feedback' }}</td>
+      <td>{{ fb.rating }} Stars</td>
+      <td>{{ fb.content }}</td>
+      <td>{{ fb.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 {% else %}
-<p>No feedbacks yet</p>
+<p>No feedbacks yet.</p>
 {% endif %}
 {% endblock %}

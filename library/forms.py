@@ -1,8 +1,8 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, SubmitField, TextAreaField, SelectField, FloatField
-from wtforms.validators import Length, DataRequired, ValidationError, InputRequired, NumberRange
+from wtforms import StringField, IntegerField, SubmitField, TextAreaField, SelectField, FloatField, PasswordField, BooleanField
+from wtforms.validators import Length, DataRequired, ValidationError, InputRequired, NumberRange, Email
 from library.models import Member, Book, Transaction
-
+from wtforms.fields import EmailField
 
 # form for creating and updating members
 class member_form(FlaskForm):
@@ -54,7 +54,27 @@ class FeedbackForm(FlaskForm):
                                           (5, '5 Stars')], coerce=int)
     submit = SubmitField('Submit')
 
-#User model validation
-def validate_role(self, role_field):
-    if role_field.data not in ['admin', 'user', 'customer']:
-        raise ValidationError('Invalid role selected')
+class LoginForm(FlaskForm):
+    email = EmailField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    remember = BooleanField('Remember Me')
+    submit = SubmitField('Login')
+
+class MembershipForm(FlaskForm):
+    months = SelectField('Months', choices=[
+        (1, '1 Month - $20'),
+        (3, '3 Months - $60'),
+        (6, '6 Months - $120'),
+        (12, '1 Year - $240')
+    ], coerce=int)
+    submit = SubmitField('Buy/Renew Membership')
+
+class ReturnBookForm(FlaskForm):
+    book_id = SelectField('Book', coerce=int)
+    submit = SubmitField('Return Book')
+
+class EmptyForm(FlaskForm):
+    class Meta:
+        csrf = True
+    submit = SubmitField()
+

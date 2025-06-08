@@ -1,8 +1,8 @@
 """Initial migration
 
-Revision ID: eb9be4a76a40
+Revision ID: b9c404856aba
 Revises: 
-Create Date: 2025-06-05 16:01:14.025181
+Create Date: 2025-06-08 14:24:03.723937
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'eb9be4a76a40'
+revision = 'b9c404856aba'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -30,6 +30,30 @@ def upgrade():
     sa.Column('returned', sa.Boolean(), nullable=True),
     sa.Column('sales_count', sa.Integer(), nullable=True),
     sa.Column('price', sa.Float(), nullable=True),
+    sa.Column('available', sa.Boolean(), nullable=True),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('user',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(length=100), nullable=False),
+    sa.Column('phone', sa.String(length=20), nullable=False),
+    sa.Column('email', sa.String(length=100), nullable=False),
+    sa.Column('password', sa.String(length=100), nullable=False),
+    sa.Column('address', sa.String(length=200), nullable=False),
+    sa.Column('role', sa.String(length=20), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('email'),
+    sa.UniqueConstraint('phone')
+    )
+    op.create_table('cart',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('book_id', sa.Integer(), nullable=True),
+    sa.Column('action', sa.String(length=10), nullable=True),
+    sa.Column('added_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['book_id'], ['book.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('member',
@@ -42,6 +66,9 @@ def upgrade():
     sa.Column('cancellation_date', sa.DateTime(), nullable=True),
     sa.Column('refund_amount', sa.Float(), nullable=True),
     sa.Column('membership_start', sa.DateTime(), nullable=True),
+    sa.Column('membership_fee', sa.Float(), nullable=True),
+    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('member_name'),
     sa.UniqueConstraint('phone_number')
@@ -52,16 +79,6 @@ def upgrade():
     sa.Column('book_id', sa.Integer(), nullable=True),
     sa.Column('borrowed_date', sa.DateTime(), nullable=True),
     sa.Column('due_date', sa.DateTime(), nullable=True),
-    sa.ForeignKeyConstraint(['book_id'], ['book.id'], ),
-    sa.ForeignKeyConstraint(['member_id'], ['member.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('cart',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('member_id', sa.Integer(), nullable=True),
-    sa.Column('book_id', sa.Integer(), nullable=True),
-    sa.Column('action', sa.String(length=10), nullable=True),
-    sa.Column('added_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['book_id'], ['book.id'], ),
     sa.ForeignKeyConstraint(['member_id'], ['member.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -80,12 +97,14 @@ def upgrade():
     op.create_table('feedback',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('member_id', sa.Integer(), nullable=True),
-    sa.Column('book_id', sa.Integer(), nullable=True),
+    sa.Column('user_id', sa.Integer(), nullable=True),
     sa.Column('content', sa.Text(), nullable=False),
     sa.Column('rating', sa.Integer(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.Column('book_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['book_id'], ['book.id'], ),
     sa.ForeignKeyConstraint(['member_id'], ['member.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('transaction',
@@ -97,8 +116,11 @@ def upgrade():
     sa.Column('amount', sa.Float(), nullable=True),
     sa.Column('book_id', sa.Integer(), nullable=True),
     sa.Column('member_id', sa.Integer(), nullable=True),
+    sa.Column('delivery_fee', sa.Float(), nullable=True),
+    sa.Column('user_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['book_id'], ['book.id'], ),
     sa.ForeignKeyConstraint(['member_id'], ['member.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     # ### end Alembic commands ###
@@ -109,8 +131,9 @@ def downgrade():
     op.drop_table('transaction')
     op.drop_table('feedback')
     op.drop_table('checkout')
-    op.drop_table('cart')
     op.drop_table('book_borrow')
     op.drop_table('member')
+    op.drop_table('cart')
+    op.drop_table('user')
     op.drop_table('book')
     # ### end Alembic commands ###

@@ -5,15 +5,34 @@
 {% if cart_items %}
 <ul>
   {% for item in cart_items %}
-  <li>
-    {{ item.book.title }} ({{ item.action|capitalize }})
-    <a href="{{ url_for('client.remove_from_cart', cart_id=item.id) }}">Remove</a>
-  </li>
+<li>
+  {{ item.book.title }} ({{ item.action|capitalize }})
+  {% if item.action == 'buy' %}
+    - ${{ item.book.price }}
+  {% endif %}
+  <a href="{{ url_for('client.remove_from_cart', cart_id=item.id) }}">Remove</a>
+</li>
   {% endfor %}
 </ul>
-<form action="{{ url_for('client.checkout_cart') }}" method="POST">
-  <button type="submit">Checkout</button>
+
+<!-- Show delivery fee and total -->
+<div class="cart-summary">
+  <p>Subtotal: ${{ "%.2f"|format(subtotal) }}</p>
+  <p>Delivery fee: ${{ "%.2f"|format(delivery_fee) }}</p>
+  <p><strong>Total: ${{ "%.2f"|format(total) }}</strong></p>
+</div>
+
+{% if has_borrow_items and not is_active_member %}
+  <div class="alert alert-warning">
+    <strong>Membership required!</strong> To borrow books, please purchase a membership first.
+  </div>
+{% endif %}
+
+<form action="{{ url_for('client.checkout_cart') }}" method="POST" value="{{ csrf_token() }}">
+  {{ form.hidden_tag() }}
+  <button type="submit" class="btn btn-primary">Checkout</button>
 </form>
+
 {% else %}
 <p>Your cart is empty</p>
 {% endif %}

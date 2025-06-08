@@ -1,3 +1,4 @@
+<!-- templates/admin_login.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,7 +8,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <style>
         body {
-            background-image: url('static/images/5.jpg');
+            background-image: url('{{ url_for('static', filename='images/5.jpg') }}');
             background-size: cover;
             background-position: center;
             margin: 0;
@@ -50,9 +51,6 @@
             padding: 15px 30px;
             border: none;
             border-radius: 5px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
             font-size: 16px;
             cursor: pointer;
             transition: background-color 0.3s;
@@ -66,18 +64,20 @@
 <body>
 
     <form action="{{ url_for('login_bp.admin_login') }}" method="post">
-        <h2>Librarian Login</h2>
+    {{ form.hidden_tag() }}
+    <h2>Librarian Login</h2>
 
-        <label for="email">Email:</label>
-        <input type="text" id="email" name="email" required>
+    <label for="email">Email:</label>
+    {{ form.email(class="form-control") }}
 
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required>
+    <label for="password">Password:</label>
+    {{ form.password(class="form-control") }}
 
-        <div class="button-container">
-            <button type="submit">Login</button>
-        </div>
-    </form>
+    <div class="button-container">
+        {{ form.submit(class="btn") }}
+    </div>
+</form>
+
 
 </body>
 </html>

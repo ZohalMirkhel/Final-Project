@@ -136,7 +136,7 @@
             </div>
             <div class="modal-body">
                 <p>Cancel membership for {{ member.name }}?</p>
-                <form action="{{ url_for('members_bp.cancel_membership', member_id=member.id) }}" method="POST">
+                <form action="{{ url_for('members_bp.cancel_membership', member_id=member.id) }}" method="POST" value="{{ csrf_token() }}">
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
                         <button type="submit" class="btn btn-danger">Yes, Cancel</button>

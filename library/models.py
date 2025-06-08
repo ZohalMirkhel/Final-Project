@@ -14,12 +14,22 @@ class Member(UserMixin, db.Model):
     refund_amount = db.Column(db.Float, default=0.0)
     membership_start = db.Column(db.DateTime, default=datetime.utcnow)
     membership_fee = db.Column(db.Float, default=20.0)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     borrowed = db.relationship('Book', secondary='book_borrow',
                                backref='borrower', lazy='dynamic',
                                overlaps="borrows,borrow_records")
 
     def get_id(self):
         return str(self.id)
+
+    def is_member(self):
+        return True
+
+    def is_active_member(self):
+        return (
+                self.membership_status == 'active' and
+                self.membership_expiry > datetime.utcnow()
+        )
 
 
 
@@ -61,14 +71,13 @@ class Transaction(db.Model):
     type_of_transaction = db.Column(db.String(length=7), nullable=False)
     date = db.Column(db.Date())
     amount = db.Column(db.Float, default=0.0)
-
-    # Add these foreign keys
     book_id = db.Column(db.Integer, db.ForeignKey('book.id'))
-    member_id = db.Column(db.Integer, db.ForeignKey('member.id'))
-
-    # Relationships (optional but recommended)
+    member_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=True)
+    delivery_fee = db.Column(db.Float, default=0.0)
     book = db.relationship('Book', backref='transactions')
     member = db.relationship('Member', backref='transactions')
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    user = db.relationship('User', backref='transactions')
 
 
 class Checkout(db.Model):
@@ -78,31 +87,31 @@ class Checkout(db.Model):
     checkout_date = db.Column(db.DateTime, default=datetime.utcnow)
     return_date = db.Column(db.DateTime, nullable=True)
     due_date = db.Column(db.DateTime, nullable=True)
-    member = db.relationship('Member', backref='checkouts')
-    book = db.relationship('Book', backref='checkouts')
+    member = db.relationship('Member', backref=db.backref('checkouts', lazy=True))
+    book = db.relationship('Book', backref=db.backref('checkouts', lazy=True))
 
 
 class Feedback(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    member_id = db.Column(db.Integer, db.ForeignKey('member.id'))
-    book_id = db.Column(db.Integer, db.ForeignKey('book.id'))
+    member_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # Add this line
     content = db.Column(db.Text, nullable=False)
     rating = db.Column(db.Integer)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    member = db.relationship('Member', backref='feedbacks')
-    book = db.relationship('Book', backref='feedbacks')
+    member = db.relationship('Member', backref='feedbacks', lazy='joined')
+    book = db.relationship('Book', backref='feedbacks', lazy='joined')
+    book_id = db.Column(db.Integer, db.ForeignKey('book.id'), nullable=True)
+    user = db.relationship('User', backref='feedbacks', lazy='joined')  # Now correctly defined
 
 
 class Cart(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    member_id = db.Column(db.Integer, db.ForeignKey('member.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     book_id = db.Column(db.Integer, db.ForeignKey('book.id'))
-    action = db.Column(db.String(10))  # 'borrow' or 'buy'
+    action = db.Column(db.String(10))
     added_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    member = db.relationship('Member', backref='cart_items')
-    book = db.relationship('Book', backref='in_carts')
+    user = db.relationship('User', backref='cart_items')
+    book = db.relationship('Book', backref='cart_items')
 
 
 # Add to models.py
@@ -113,5 +122,24 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(100), nullable=False, unique=True)
     password = db.Column(db.String(100), nullable=False)
     address = db.Column(db.String(200), nullable=False)
-    role = db.Column(db.String(20), nullable=False)  # 'admin' or 'user'
+    role = db.Column(db.String(20), nullable=False)
+    member = db.relationship('Member', backref='user', uselist=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def is_member(self):
+        return False
+
+    def is_active_member(self):
+        return False
+
+    def get_id(self):
+        return str(self.id)
+
+    def is_authenticated(self):
+        return True
+
+    def is_active(self):
+        return True
+
+    def is_anonymous(self):
+        return False

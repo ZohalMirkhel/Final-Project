@@ -6,7 +6,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form action='./return-book' method="POST">
+                <form action='./return-book' method="POST" value="{{ csrf_token() }}">
+                    {{ form.hidden_tag() }}
                     <label class="form-label">Select Book:</label>
                     <select name="book_name" class="custom-select form-control" id="returnBookSelect" required>
                         <option value="" selected disabled>Select a book to return</option>

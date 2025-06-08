@@ -7,7 +7,8 @@
             </div>
 
             <div class="modal-body text-left">
-                <form action="/members" method="POST">
+                <form action="/members" method="POST" value="{{ csrf_token() }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                     {{ member_form.hidden_tag() }}
 

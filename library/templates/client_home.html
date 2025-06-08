@@ -33,6 +33,15 @@
             font-size: 2rem;
             margin-bottom: 0.5rem;
         }
+        .badge-borrowed {
+            background-color: #0dcaf0;
+        }
+        .badge-purchased {
+            background-color: #198754;
+        }
+        .badge-late {
+            background-color: #dc3545;
+        }
     </style>
 {% endblock %}
 
@@ -46,90 +55,27 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                {% if member and membership_active %}
                 <div class="mb-3">
                     <label class="form-label">Current Membership Status:</label>
-                    <p class="fw-bold">Active until Dec 31, 2023</p>
+                    <p class="fw-bold">Active until {{ member.membership_expiry.strftime('%b %d, %Y') }}</p>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Renewal Options</label>
-                    <select class="form-select">
-                        <option>1 Month - $10</option>
-                        <option>6 Months - $50</option>
-                        <option>1 Year - $90 (Save 25%)</option>
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary">Renew Membership</button>
-            </div>
-        </div>
-    </div>
-</div>
+                {% endif %}
 
-<!-- Buy Book Modal -->
-<div class="modal fade" id="buyBookModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Purchase Book</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label">Search Books</label>
-                    <input type="text" class="form-control" placeholder="Book title or author">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Select Book</label>
-                    <select class="form-select">
-                        <option>The Great Gatsby - $12.99</option>
-                        <option>To Kill a Mockingbird - $10.99</option>
-                        <option>1984 - $9.99</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Quantity</label>
-                    <input type="number" class="form-control" value="1" min="1">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary">Add to Cart</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Borrow Book Modal -->
-<div class="modal fade" id="borrowBookModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Borrow Book</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label">Available Books</label>
-                    <select class="form-select">
-                        <option>The Catcher in the Rye (Available)</option>
-                        <option>Brave New World (Available)</option>
-                        <option>Pride and Prejudice (Available)</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Borrow Period</label>
-                    <select class="form-select">
-                        <option>1 Week</option>
-                        <option>2 Weeks</option>
-                        <option>3 Weeks (Max)</option>
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary">Borrow Book</button>
+                <form method="POST" action="{{ url_for('client.buy_membership') }}">
+                    {{ membership_form.hidden_tag() }}
+                    <div class="mb-3">
+                        <label class="form-label">Membership Options</label>
+                        {{ membership_form.months(class="form-select") }}
+                    </div>
+                    <div class="modal-footer">
+                        {% if member and membership_active %}
+                        <button type="button" class="btn btn-danger" onclick="cancelMembership()">Cancel Membership</button>
+                        {% endif %}
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Buy/Renew Membership</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -144,21 +90,28 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label">Books to Return</label>
-                    <select class="form-select">
-                        <option>The Hobbit (Due: Dec 15)</option>
-                        <option>Harry Potter (Due: Dec 10)</option>
-                        <option>Lord of the Rings (Due: Dec 5)</option>
-                    </select>
-                </div>
-                <div class="alert alert-info">
-                    Late returns may incur fees of $0.50 per day
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary">Return Book</button>
+                <form method="POST" action="{{ url_for('client.return_book') }}">
+                    {{ return_form.hidden_tag() }}
+                    <div class="mb-3">
+                        <label class="form-label">Books to Return</label>
+                        <select class="form-select" name="book_id" required>
+                            {% for checkout, book in borrowed_books %}
+                            <option value="{{ book.id }}">
+                                {{ book.title }} (Due: {{ checkout.due_date.strftime('%Y-%m-%d') }})
+                            </option>
+                            {% else %}
+                            <option disabled>No books to return</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="alert alert-info">
+                        Late returns may incur fees of $0.50 per day
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Return Book</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -167,27 +120,31 @@
 <div class="hero-section">
     <h1 class="display-5 fw-bold">Welcome to Your Library Dashboard</h1>
     <p class="lead">Manage your books, membership, and reading activities</p>
-    
+
     <div class="action-buttons">
         <button type="button" class="btn btn-primary btn-action" data-bs-toggle="modal" data-bs-target="#membershipModal">
             <span class="btn-icon">👑</span>
-            Buy/Renew Membership
+            {% if membership_active %}Renew Membership{% else %}Buy Membership{% endif %}
         </button>
-        
-        <button type="button" class="btn btn-success btn-action" data-bs-toggle="modal" data-bs-target="#buyBookModal">
+
+        <a href="{{ url_for('client.catalog') }}" class="btn btn-success btn-action">
             <span class="btn-icon">💰</span>
             Buy Books
-        </button>
-        
-        <button type="button" class="btn btn-info btn-action" data-bs-toggle="modal" data-bs-target="#borrowBookModal">
+        </a>
+
+        {% if membership_active %}
+        <a href="{{ url_for('client.catalog') }}" class="btn btn-info btn-action">
             <span class="btn-icon">📚</span>
             Borrow Books
-        </button>
-        
+        </a>
+        {% endif %}
+
+        {% if borrowed_books %}
         <button type="button" class="btn btn-warning btn-action" data-bs-toggle="modal" data-bs-target="#returnBookModal">
             <span class="btn-icon">⏱️</span>
             Return Books
         </button>
+        {% endif %}
     </div>
 </div>
 
@@ -198,47 +155,104 @@
                 <h5>My Current Books</h5>
             </div>
             <div class="card-body">
+                {% if borrowed_books %}
                 <ul class="list-group">
+                    {% for checkout, book in borrowed_books %}
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        The Great Gatsby
-                        <span class="badge bg-info">Due: Dec 15</span>
+                        {{ book.title }}
+                        <span class="badge {% if checkout.due_date and datetime.utcnow() > checkout.due_date %}bg-danger{% else %}bg-info{% endif %}">
+                            Due: {{ checkout.due_date.strftime('%Y-%m-%d') }}
+                        </span>
                     </li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        1984
-                        <span class="badge bg-success">Purchased</span>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        To Kill a Mockingbird
-                        <span class="badge bg-warning">Due: Dec 10</span>
-                    </li>
+                    {% endfor %}
                 </ul>
+                {% else %}
+                <p>You don't have any borrowed books</p>
+                {% endif %}
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-6">
         <div class="card">
-            <div class="card-header bg-success text-white">
+            <div class="card-header {% if membership_active %}bg-success{% else %}bg-secondary{% endif %} text-white">
                 <h5>Membership Status</h5>
             </div>
             <div class="card-body">
                 <div class="mb-3">
-                    <strong>Status:</strong> <span class="badge bg-success">Active</span>
+                    <strong>Status:</strong>
+                    <span class="badge {% if membership_active %}bg-success{% else %}bg-secondary{% endif %}">
+                        {% if membership_active %}Active{% else %}Inactive{% endif %}
+                    </span>
                 </div>
+
+                {% if membership_active %}
                 <div class="mb-3">
-                    <strong>Expires:</strong> December 31, 2023
+                    <strong>Expires:</strong> {{ member.membership_expiry.strftime('%b %d, %Y') }}
                 </div>
+                {% endif %}
+
+                {% if member %}
                 <div class="mb-3">
-                    <strong>Borrowed Books:</strong> 3 of 5 allowed
+                    <strong>Borrowed Books:</strong> {{ borrowed_count }} of {{ borrow_limit }} allowed
                 </div>
+                {% endif %}
+
                 <div class="mb-3">
-                    <strong>Late Fees:</strong> $0.00
+                    <strong>Late Fees:</strong> ${{ late_fees|round(2) }}
                 </div>
+
                 <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#membershipModal">
-                    Renew Membership
+                    {% if membership_active %}Renew{% else %}Buy{% endif %} Membership
                 </button>
+
+                {% if membership_active %}
+                <button class="btn btn-outline-danger" onclick="cancelMembership()">
+                    Cancel Membership
+                </button>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                    xhr.setRequestHeader("X-CSRFToken", csrfToken);
+                }
+            }
+        });
+    });
+
+    function cancelMembership() {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+        if (confirm("Are you sure you want to cancel your membership?")) {
+            fetch("{{ url_for('client.cancel_membership') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Membership cancelled: " + data.message);
+                    location.reload();
+                } else {
+                    alert("Error: " + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("An error occurred. Please try again.");
+            });
+        }
+    }
+</script>
 {% endblock %}

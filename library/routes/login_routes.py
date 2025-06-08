@@ -2,39 +2,54 @@ from flask import Blueprint, session, request, redirect, url_for, flash, render_
 from werkzeug.security import generate_password_hash, check_password_hash
 from library.models import User, db
 from flask_login import login_user
+from library.forms import LoginForm
+from flask_wtf.csrf import generate_csrf
 
 # Create the blueprint
 client_bp = Blueprint('client', __name__, url_prefix='/client')
 login_bp = Blueprint('login_bp', __name__)
 
+
 @login_bp.route('/admin_login', methods=['GET', 'POST'])
 def admin_login():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
+    form = LoginForm()
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password.data
+
+        # Find admin user
         user = User.query.filter_by(email=email, role='admin').first()
-        if user and check_password_hash(user.password, password):
-            session['user'] = {'id': user.id, 'email': user.email, 'role': user.role}
-            return redirect(url_for('routes_bp.home'))
+
+        if user:
+            if check_password_hash(user.password, password):
+                login_user(user)
+                flash('Admin logged in successfully!', 'success')
+                return redirect(url_for('routes_bp.home_page'))
+            else:
+                flash('Incorrect password', 'error')
         else:
-            return 'Incorrect email or password. Please try again.'
-    return render_template('admin_login.html')
+            flash('Admin account not found', 'error')
+
+    return render_template('admin_login.html', form=form)
 
 
 @login_bp.route('/client_login', methods=['GET', 'POST'])
 def client_login():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
+    form = LoginForm()  # Create a form instance
+
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password.data
         user = User.query.filter_by(email=email).first()
 
         if user and check_password_hash(user.password, password):
             login_user(user)
             flash('Logged in successfully!', 'success')
-            return redirect(url_for('login_bp.client_home'))
+            return redirect(url_for('client.client_home'))
         else:
             flash('Invalid email or password', 'error')
-    return render_template('client_login.html')
+
+    return render_template('client_login.html', form=form)  # Pass form to template
 
 
 
@@ -69,6 +84,3 @@ def registration_success():
     return render_template('registration_success.html')
 
 
-@login_bp.route('/client_home')
-def client_home():
-    return render_template('client_home.html')

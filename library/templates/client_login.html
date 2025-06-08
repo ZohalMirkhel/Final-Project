@@ -1,13 +1,14 @@
+<!-- templates/client_login.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Readers  Login</title>
+    <title>Readers Login</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <style>
         body {
-            background-image: url('static/images/3.jpg');
+            background-image: url('{{ url_for('static', filename='images/3.jpg') }}');
             background-size: cover;
             background-position: center;
             margin: 0;
@@ -28,57 +29,77 @@
             text-align: center;
         }
 
-        form label {
-            display: block;
-            margin: 10px 0;
+        .form-group {
+            margin-bottom: 15px;
         }
 
-        form input, form select {
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .form-control {
             width: 100%;
             padding: 15px;
-            margin-bottom: 20px;
             box-sizing: border-box;
         }
 
-        form .button-container {
+        .button-container {
             text-align: center;
         }
 
-        form button {
+        .btn {
             background-color: #3498db;
             color: white;
             padding: 15px 30px;
-            margin-right: 20px;
             border: none;
             border-radius: 5px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
             font-size: 16px;
             cursor: pointer;
+            margin-right: 10px;
             transition: background-color 0.3s;
         }
 
-        form button:hover {
+        .btn:hover {
             background-color: #82EE48;
+        }
+
+        .btn-secondary {
+            background-color: #aaa;
+        }
+
+        .btn-secondary:hover {
+            background-color: #666;
         }
     </style>
 </head>
 <body>
 
     <form action="{{ url_for('login_bp.client_login') }}" method="post">
+        {{ form.hidden_tag() }}
         <h2>Readers Login</h2>
 
-        <label for="email">Email:</label>
-        <input type="text" id="email" name="email" required>
+        <div class="form-group">
+            {{ form.email.label }}
+            {{ form.email(class="form-control") }}
+        </div>
 
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required>
+        <div class="form-group">
+            {{ form.password.label }}
+            {{ form.password(class="form-control") }}
+        </div>
+
+        <div class="form-group">
+            {{ form.remember.label }}
+            {{ form.remember() }}
+        </div>
 
         <div class="button-container">
-            <button type="submit">Login</button>
-            <button type="button" onclick="window.location.href='{{ url_for('login_bp.registration_form') }}'">Register</button>
-
+            {{ form.submit(class="btn") }}
+            <button type="button" class="btn btn-secondary"
+                    onclick="window.location.href='{{ url_for('login_bp.registration_form') }}'">
+                Register
+            </button>
         </div>
     </form>
 

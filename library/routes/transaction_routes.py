@@ -32,6 +32,7 @@ def transactions_page():
 def redirect_back():
     return redirect(request.referrer or url_for('transactions_bp.transactions_page'))
 
+
 @transactions_bp.route('/borrow-book', methods=['POST'])
 def borrow_book():
     try:
@@ -59,8 +60,15 @@ def borrow_book():
             flash("No copies available for borrowing", category='danger')
             return redirect_back()
 
+        # Check membership status
         if member.membership_status != 'active' or member.membership_expiry < datetime.utcnow():
             flash("Membership has expired. Please renew to borrow books.", category='danger')
+            return redirect_back()
+
+        # Check current borrowed books count (NEW VALIDATION)
+        current_borrows = Book_borrowed.query.filter_by(member_id=member.id).count()
+        if current_borrows >= 10:
+            flash("Member has reached the maximum limit of 10 borrowed books", category='danger')
             return redirect_back()
 
         # Calculate due date (14 days from now)
@@ -99,6 +107,7 @@ def borrow_book():
         db.session.rollback()
         flash(f"Error: {str(e)}", category='danger')
         return redirect_back()
+
 
 # Route: Return Book (Fixed)
 @transactions_bp.route('/return-book', methods=['POST'])
@@ -246,7 +255,6 @@ def sell_book():
 
 
 def redirect_back():
-    """Redirect back to the referring page, or to transactions page if no referrer"""
     return redirect(request.referrer or url_for('transactions_bp.transactions_page'))
 
 
@@ -260,34 +268,33 @@ def purchase_book():
     category = request.form.get("category")
     price = float(request.form.get("price"))
 
-    member = Member.query.get(int(member_requested))
+    member = Member.query.get(int(member_requested)) if member_requested and member_requested.isdigit() else None
 
-    if member:
-        # Create new book
-        new_book = Book(
-            title=title,
-            author=author,
-            isbn=isbn,
-            category=category,
-            stock=1,
-            borrow_stock=1,
-            price=0  # Reset price for library use
-        )
+    # Create new book
+    new_book = Book(
+        title=title,
+        author=author,
+        isbn=isbn,
+        category=category,
+        stock=1,
+        borrow_stock=1,
+        price=0  # Reset price for library use
+    )
+    db.session.add(new_book)
+    db.session.flush()  # Get the new_book ID
 
-        # Record transaction
-        purchase_transaction = Transaction(
-            book_name=title,
-            member_name=member.member_name,
-            type_of_transaction="purchase",
-            amount=-price,  # Negative for expense
-            date=date.today()
-        )
+    # Record purchase transaction
+    purchase_transaction = Transaction(
+        book_name=title,
+        member_name=member.member_name if member else "Library Purchase",
+        type_of_transaction="purchase",
+        amount=-price,  # Negative for expense
+        date=date.today(),
+        book_id=new_book.id,
+        member_id=member.id if member else None
+    )
+    db.session.add(purchase_transaction)
 
-        db.session.add(new_book)
-        db.session.add(purchase_transaction)
-        db.session.commit()
-        flash("Book purchased and added to library", category='success')
-    else:
-        flash("Purchase failed", category='danger')
-
+    db.session.commit()
+    flash("Book purchased and added to library", category='success')
     return redirect(request.referrer)

@@ -118,7 +118,7 @@ def update_member(member_id):
     except:
         flash("Failed to update", category="danger")
 
-    return redirect(url_for('members_page'))
+    return redirect(url_for('members_bp.members_page'))
 
 
 @members_bp.route('/renew-membership/<member_id>', methods=['POST'])
