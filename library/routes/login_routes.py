@@ -1,9 +1,8 @@
 from flask import Blueprint, session, request, redirect, url_for, flash, render_template
 from werkzeug.security import generate_password_hash, check_password_hash
 from library.models import User, db
-from flask_login import login_user
+from flask_login import login_user, logout_user, login_required, current_user
 from library.forms import LoginForm
-from flask_wtf.csrf import generate_csrf
 
 # Create the blueprint
 client_bp = Blueprint('client', __name__, url_prefix='/client')
@@ -83,4 +82,15 @@ def registration_form():
 def registration_success():
     return render_template('registration_success.html')
 
+@login_bp.route('/admin_logout')
+@login_required
+def admin_logout():
+    logout_user()
+    return redirect(url_for('login_bp.admin_login'))
+
+@login_bp.route('/client_logout')
+@login_required
+def client_logout():
+    logout_user()
+    return redirect(url_for('login_bp.client_login'))
 

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from datetime import datetime, date, timedelta
 from flask import flash
@@ -209,7 +209,6 @@ def add_to_cart(book_id):
 
     return redirect(request.referrer)
 
-
 def is_member(user):
     return hasattr(user, 'membership_status')
 
@@ -419,8 +418,6 @@ def my_books():
                            returned_books=returned_books,
                            purchased=purchased)
 
-
-
 @client.route('/buy-membership', methods=['POST'])
 @login_required
 def buy_membership():
@@ -478,8 +475,7 @@ def buy_membership():
     flash("Membership purchased successfully!", "success")
     return redirect(url_for('client.client_home'))
 
-
-# client_routes.py
+#Cancel Membership
 @client.route('/cancel-membership', methods=['POST'])
 @login_required
 def cancel_membership():
@@ -497,27 +493,31 @@ def cancel_membership():
     unused_days = max(0, total_days - used_days)
     refund = (unused_days / total_days) * (member.membership_fee * (total_days / 30)) * 0.5
 
-    # Update membership
-    member.membership_status = 'cancelled'
-    member.cancellation_date = datetime.utcnow()
-    member.refund_amount = refund
+    # Delete dependent records first
+    Checkout.query.filter_by(member_id=member.id).delete()
+    Cart.query.filter_by(user_id=current_user.id).delete()
+    Feedback.query.filter_by(member_id=member.id).delete()
+    Transaction.query.filter_by(member_id=member.id).delete()
 
-    # Record transaction
+    # Now delete the member
+    db.session.delete(member)
+
+    # Record transaction under user instead of member
     transaction = Transaction(
-        member_name=member.member_name,
+        book_name="Membership Refund",
         type_of_transaction="refund",
         amount=-refund,
         date=date.today(),
-        member_id=member.id
+        user_id=current_user.id  # Associate with user instead of member
     )
     db.session.add(transaction)
+
     db.session.commit()
 
     return jsonify({
         'success': True,
         'message': f'Membership cancelled. Refund amount: ${refund:.2f}'
     })
-
 
 @client.route('/return-book', methods=['POST'])
 @login_required
@@ -608,8 +608,6 @@ def feedback():
                            form=form,
                            feedbacks=feedbacks,
                            current_user=current_user)
-
-
 
 @client.route('/feedbacks')
 @login_required

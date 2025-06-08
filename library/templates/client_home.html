@@ -56,11 +56,13 @@
             </div>
             <div class="modal-body">
                 {% if member and membership_active %}
-                <div class="mb-3">
-                    <label class="form-label">Current Membership Status:</label>
-                    <p class="fw-bold">Active until {{ member.membership_expiry.strftime('%b %d, %Y') }}</p>
-                </div>
-                {% endif %}
+        <!-- Show active membership details -->
+    {% else %}
+        <p>No active membership</p>
+        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#membershipModal">
+            Buy Membership
+        </button>
+    {% endif %}
 
                 <form method="POST" action="{{ url_for('client.buy_membership') }}">
                     {{ membership_form.hidden_tag() }}
@@ -178,40 +180,39 @@
             <div class="card-header {% if membership_active %}bg-success{% else %}bg-secondary{% endif %} text-white">
                 <h5>Membership Status</h5>
             </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <strong>Status:</strong>
-                    <span class="badge {% if membership_active %}bg-success{% else %}bg-secondary{% endif %}">
-                        {% if membership_active %}Active{% else %}Inactive{% endif %}
-                    </span>
-                </div>
+            <!-- client_home.html -->
+<div class="card-body">
+    <div class="mb-3">
+        <strong>Status:</strong>
+        <span class="badge {% if membership_active %}bg-success{% else %}bg-secondary{% endif %}">
+            {% if membership_active %}Active{% else %}Inactive{% endif %}
+        </span>
+    </div>
 
-                {% if membership_active %}
-                <div class="mb-3">
-                    <strong>Expires:</strong> {{ member.membership_expiry.strftime('%b %d, %Y') }}
-                </div>
-                {% endif %}
+    {% if membership_active %}
+    <div class="mb-3">
+        <strong>Expires:</strong> {{ member.membership_expiry.strftime('%b %d, %Y') }}
+    </div>
+    {% endif %}
 
-                {% if member %}
-                <div class="mb-3">
-                    <strong>Borrowed Books:</strong> {{ borrowed_count }} of {{ borrow_limit }} allowed
-                </div>
-                {% endif %}
+    <div class="mb-3">
+        <strong>Borrowed Books:</strong> {{ borrowed_count }} of {{ borrow_limit }} allowed
+    </div>
 
-                <div class="mb-3">
-                    <strong>Late Fees:</strong> ${{ late_fees|round(2) }}
-                </div>
+    <div class="mb-3">
+        <strong>Late Fees:</strong> ${{ late_fees|round(2) }}
+    </div>
 
-                <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#membershipModal">
-                    {% if membership_active %}Renew{% else %}Buy{% endif %} Membership
-                </button>
+    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#membershipModal">
+        {% if membership_active %}Renew{% else %}Buy{% endif %} Membership
+    </button>
 
-                {% if membership_active %}
-                <button class="btn btn-outline-danger" onclick="cancelMembership()">
-                    Cancel Membership
-                </button>
-                {% endif %}
-            </div>
+    {% if membership_active %}
+    <button class="btn btn-outline-danger" onclick="cancelMembership()">
+        Cancel Membership
+    </button>
+    {% endif %}
+</div>
         </div>
     </div>
 </div>
@@ -228,31 +229,40 @@
         });
     });
 
-    function cancelMembership() {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+function cancelMembership() {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
-        if (confirm("Are you sure you want to cancel your membership?")) {
-            fetch("{{ url_for('client.cancel_membership') }}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert("Membership cancelled: " + data.message);
-                    location.reload();
-                } else {
-                    alert("Error: " + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert("An error occurred. Please try again.");
-            });
-        }
+    if (confirm("Are you sure you want to cancel your membership?")) {
+        fetch("{{ url_for('client.cancel_membership') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            }
+        })
+        .then(response => {
+            if (response.status === 404 || response.status === 400) {
+                return response.json().then(data => {
+                    throw new Error(data.message);
+                });
+            }
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert("Error: " + data.message);
+            }
+        })
+        .catch(error => {
+            alert(error.message);
+        });
     }
+}
 </script>
 {% endblock %}

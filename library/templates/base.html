@@ -31,12 +31,14 @@
           <a href="{{ url_for('transactions_bp.transactions_page') }}" class="nav-link px-2 link-dark">Transactions</a>
           <a href="{{ url_for('client.feedbacks') }}" class="nav-link px-2 link-dark">Feedbacks</a>
           <li><a href="/reports" class="nav-link px-2 link-dark">Report</a></li>
+          <div class="text-end">
+            {% if current_user.is_authenticated %}
+              <a href="{{ url_for('login_bp.admin_logout') }}" class="btn btn-outline-dark me-2">Logout</a>
+            {% else %}
+              <a href="{{ url_for('login_bp.admin_login') }}" class="btn btn-outline-dark me-2">Login</a>
+            {% endif %}
+          </div>
         </ul>
-
-        <form action= "./search" class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3" method="POST">
-          <input type="search" class="form-control" name="query" placeholder="Search Book/Author..." aria-label="Search"/>
-        </form>
-
       </div>
     </div>
   </header>
