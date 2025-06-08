@@ -33,19 +33,4 @@
 {% else %}
 <p>No borrowed books</p>
 {% endif %}
-
-<!-- Returned Books Section -->
-<h3>Returned Books</h3>
-{% if returned_books %}
-<ul>
-  {% for checkout, book in returned_books %}
-  <li>
-    {{ book.title }}
-    (Returned on {{ checkout.return_date.strftime('%Y-%m-%d') if checkout.return_date else 'N/A' }})
-  </li>
-  {% endfor %}
-</ul>
-{% else %}
-<p>No returned books</p>
-{% endif %}
 {% endblock %}

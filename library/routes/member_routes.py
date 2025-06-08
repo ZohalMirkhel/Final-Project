@@ -17,7 +17,9 @@ members_bp = Blueprint('members_bp', __name__)
 @members_bp.route('/members', methods=['GET', 'POST'])
 def members_page():
     # Query members once
-    members = Member.query.order_by('id').all()
+    members = Member.query.filter(
+        Member.membership_status != 'cancelled'
+    ).order_by('id').all()
 
     # Precompute total paid for each member
     for member in members:

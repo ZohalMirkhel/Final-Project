@@ -5,7 +5,7 @@ from flask import Blueprint, render_template, redirect, flash, request, url_for
 from flask import jsonify
 
 from library import db
-from library.models import Book, Member, Transaction, Book_borrowed
+from library.models import Book, Member, Transaction, Book_borrowed, Checkout
 from sqlalchemy import or_
 
 # Define the blueprint
@@ -38,7 +38,14 @@ def transactions_page():
     ).distinct()
 
     # Combine both
-    all_borrowed_book_ids = admin_borrowed_books.union(client_borrowed_books).subquery()
+    all_borrowed_book_ids = db.session.query(Book_borrowed.book_id).filter(
+        Book_borrowed.return_date.is_(None)
+    ).distinct().union(
+        db.session.query(Checkout.book_id).filter(
+            Checkout.return_date.is_(None)
+        ).distinct()
+    ).subquery()
+
     books_to_return = Book.query.filter(Book.id.in_(all_borrowed_book_ids)).all()
     return render_template('transactions/transactions.html',
                            transactions=transaction, length=len(transaction),
@@ -162,6 +169,7 @@ def return_book():
             return_date=None
         ).first()
 
+        # If not found, try client borrows (Checkout)
         if not borrow_record:
             borrow_record = Checkout.query.filter_by(
                 book_id=book.id,
@@ -169,13 +177,17 @@ def return_book():
                 return_date=None
             ).first()
 
-        # Calculate late fee if applicable
-        if borrow_record and datetime.utcnow() > borrow_record.due_date:
-            days_late = (datetime.utcnow() - borrow_record.due_date).days
-            late_fee = days_late * 10
+        if not borrow_record:
+            flash("No active borrow record found", category='danger')
+            return redirect_back()
 
-        # Remove borrow record
-        db.session.delete(borrow_record)
+        # Calculate late fee
+        if borrow_record.due_date and datetime.utcnow() > borrow_record.due_date:
+            days_late = (datetime.utcnow() - borrow_record.due_date).days
+            late_fee = days_late * 10  # $10/day for admin view
+
+        # Update record (don't delete - set return date)
+        borrow_record.return_date = datetime.utcnow()
 
         # Update book stock
         book.borrow_stock += 1

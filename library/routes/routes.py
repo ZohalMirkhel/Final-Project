@@ -31,15 +31,13 @@ def home_page():
 
     # Get admin borrows
     admin_borrowed_books = db.session.query(Book_borrowed.book_id).filter(
-        Book_borrowed.return_date is None
+        Book_borrowed.return_date.is_(None)
     ).distinct()
 
-    # Get client borrows
     client_borrowed_books = db.session.query(Checkout.book_id).filter(
-        Checkout.return_date is None
+        Checkout.return_date.is_(None)
     ).distinct()
 
-    # Combine both
     all_borrowed_book_ids = admin_borrowed_books.union(client_borrowed_books).subquery()
     books_to_return = Book.query.filter(Book.id.in_(all_borrowed_book_ids)).all()
 

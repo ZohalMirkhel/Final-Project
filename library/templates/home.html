@@ -21,7 +21,9 @@
   {% include 'books/add_book_modal.html' %}
   {% include 'members/add_member_modal.html' %}
   {% include 'transactions/borrow_book_modal.html' %}
-  {% include 'transactions/return_book_modal.html' %}
+  {% with books_to_return=books_to_return %}
+    {% include 'transactions/return_book_modal.html' %}
+  {% endwith %}
 
   <div class="bg-dark text-secondary px-4 py-5 text-center">
       <div class="py-5">

@@ -34,7 +34,17 @@ def books_page():
 
     # Combine both
     all_borrowed_book_ids = admin_borrowed_books.union(client_borrowed_books).subquery()
-    books_to_return = Book.query.filter(Book.id.in_(all_borrowed_book_ids)).all()
+    books_to_return = db.session.query(Book).join(
+        Book_borrowed, Book.id == Book_borrowed.book_id
+    ).filter(
+        Book_borrowed.return_date.is_(None)
+    ).union(
+        db.session.query(Book).join(
+            Checkout, Book.id == Checkout.book_id
+        ).filter(
+            Checkout.return_date.is_(None)
+        )
+    ).all()
 
     if form_book.validate_on_submit():
         book_to_create = Book(
@@ -114,17 +124,32 @@ def search_book():
         )).all()
     return render_template('books/search_page.html', books=books)
 
+
 @book_bp.route('/book/<int:book_id>')
 def get_book_members(book_id):
     book = Book.query.get_or_404(book_id)
     members = []
-    for borrow in book.borrow_records:  # Use borrow_records relationship
-        members.append({
-            'id': borrow.member.id,
-            'member_name': borrow.member.member_name,
-            'borrowed_date': borrow.borrowed_date.strftime('%Y-%m-%d'),  # Add this
-            'due_date': borrow.due_date.strftime('%Y-%m-%d')              # Add this
-        })
+
+    # Admin borrows
+    for borrow in book.borrow_records:
+        if borrow.return_date is None:
+            members.append({
+                'id': borrow.member.id,
+                'member_name': borrow.member.member_name,
+                'borrowed_date': borrow.borrowed_date.strftime('%Y-%m-%d'),
+                'due_date': borrow.due_date.strftime('%Y-%m-%d')
+            })
+
+    # Client borrows
+    for checkout in book.checkouts:
+        if checkout.return_date is None:
+            members.append({
+                'id': checkout.member.id,
+                'member_name': checkout.member.member_name,
+                'borrowed_date': checkout.checkout_date.strftime('%Y-%m-%d'),
+                'due_date': checkout.due_date.strftime('%Y-%m-%d')
+            })
+
     return jsonify({'members': members})
 
 

@@ -65,8 +65,8 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Fetch ACTUAL book details from server
-        fetch(`/transactions/book/${bookId}`)
+        // Fetch book details from server
+        fetch(`/book/${bookId}`)
             .then(response => response.json())
             .then(data => {
                 if (data.members && data.members.length > 0) {

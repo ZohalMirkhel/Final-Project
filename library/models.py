@@ -18,6 +18,7 @@ class Member(UserMixin, db.Model):
     borrowed = db.relationship('Book', secondary='book_borrow',
                                backref='current_borrowers', lazy='dynamic',
                                overlaps="borrows,borrow_records")
+    client_borrows = db.relationship('Checkout', back_populates='member', lazy='dynamic')
 
     def get_id(self):
         return str(self.id)
@@ -46,6 +47,9 @@ class Book(db.Model):
     sales_count = db.Column(db.Integer, default=0)
     price = db.Column(db.Float, default=0.0)
     available = db.Column(db.Boolean(), default=True)
+    borrow_records = db.relationship('Book_borrowed', back_populates='book', lazy='dynamic')
+    checkouts = db.relationship('Checkout', back_populates='book', lazy='dynamic')
+
 
 
 class Book_borrowed(db.Model):
@@ -60,8 +64,8 @@ class Book_borrowed(db.Model):
     # Add these relationships
     member = db.relationship('Member', backref='admin_borrows',
                              overlaps="borrowed,current_borrowers,borrow_records")
-    book = db.relationship('Book', backref='admin_borrow_records',
-                           overlaps="borrowed,current_borrowers,borrows")
+    book = db.relationship('Book', back_populates='borrow_records',
+                             overlaps="borrowed,current_borrowers,borrows")
 
 
 class Transaction(db.Model):
@@ -88,7 +92,7 @@ class Checkout(db.Model):
     checkout_date = db.Column(db.DateTime, default=datetime.utcnow)
     return_date = db.Column(db.DateTime, nullable=True)
     due_date = db.Column(db.DateTime, nullable=True)
-    member = db.relationship('Member', backref='client_borrows')
+    member = db.relationship('Member', back_populates='client_borrows')
     book = db.relationship('Book', backref='client_checkouts')
 
 
