@@ -710,7 +710,6 @@ def feedbacks():
     return render_template('client/feedbacks.html', feedbacks=feedbacks)
 
 
-# Add to client_routes.py
 @client.route('/change-password', methods=['POST'])
 @login_required
 def change_password():
@@ -720,11 +719,22 @@ def change_password():
             flash("Current password is incorrect", "danger")
             return redirect(url_for('client.profile'))
 
+        # Additional validation for new password
+        if len(form.new_password.data) < 8:
+            flash("Password must be at least 8 characters", "danger")
+            return redirect(url_for('client.profile'))
+
+        if not any(char in '!@#$%^&*(),.?":{}|<>' for char in form.new_password.data):
+            flash("Password must contain at least one special character", "danger")
+            return redirect(url_for('client.profile'))
+
         current_user.password = generate_password_hash(form.new_password.data)
         db.session.commit()
         flash("Password updated successfully!", "success")
     else:
-        for error in form.errors.values():
-            flash(f"Error: {error[0]}", "danger")
+        # Handle WTForms validation errors
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f"Error: {error}", "danger")
 
     return redirect(url_for('client.profile'))

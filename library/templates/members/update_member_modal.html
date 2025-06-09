@@ -19,6 +19,9 @@
                     {{ member_form.member_name.label() }}
                     {{ member_form.member_name(class="form-control", placeholder="Author",value= member.member_name) }}
 
+                    {{ update_member_form.email.label() }}
+                    {{ update_member_form.email(class="form-control", value=member.user.email) }}
+
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         {{member_form.submit(class="btn btn-primary")}}

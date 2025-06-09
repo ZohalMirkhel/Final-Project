@@ -2,7 +2,7 @@ from flask import Blueprint
 from flask import render_template, redirect, url_for, flash, request
 
 from library import app, db
-from library.forms import AdminCreateMemberForm, member_form, AdminChangePasswordForm
+from library.forms import AdminCreateMemberForm, member_form, AdminChangePasswordForm, UpdateMemberForm
 from werkzeug.security import generate_password_hash, check_password_hash
 from library.models import Book, Member, Transaction, User
 from datetime import datetime, timedelta, date
@@ -19,6 +19,7 @@ def members_page():
     admin_form = AdminCreateMemberForm()
     member_form_instance = member_form()
     admin_password_form = AdminChangePasswordForm()
+    update_member_form = UpdateMemberForm()
     # Query members once
     members = Member.query.filter(
         Member.membership_status != 'cancelled'
@@ -108,6 +109,7 @@ def members_page():
 
     return render_template('members/members.html',
                            admin_form=AdminCreateMemberForm(),
+                           update_member_form=update_member_form,
                            admin_password_form=admin_password_form,
                            member_form=member_form_instance,
                            members=members,
@@ -119,43 +121,43 @@ def members_page():
                            current_date=datetime.utcnow().date())
 
 
-# deletes a member
-@members_bp.route('/delete-member/<member_id>', methods=['POST'])
-def delete_member(member_id):
-    try:
-        # reads requested member from db
-        member = Member.query.filter_by(id=member_id).first()
-        db.session.delete(member)
-        db.session.commit()
-        flash("Deleted Successfully", category="success")
-
-    except:
-        flash("Error in deletion", category="danger")
-
-    return redirect(url_for('routes_bp.home_page'))
-
-
 # updates a member
+# member_routes.py
 @members_bp.route('/update-member/<member_id>', methods=['GET', 'POST'])
 def update_member(member_id):
-    # reads requested member from db
     member = Member.query.filter_by(id=member_id).first()
+    user = User.query.get(member.user_id)
+
     newName = request.form.get("name")
     newNumber = request.form.get("phone_number")
     newMember = request.form.get("member_name")
+    newEmail = request.form.get("email")
 
     try:
-        if member.name is not newName:
+        # Validate email uniqueness
+        if newEmail != user.email:
+            existing_user = User.query.filter(User.email == newEmail, User.id != user.id).first()
+            if existing_user:
+                flash("Email already in use by another user", category="danger")
+                return redirect(url_for('members_bp.members_page'))
+
+        # Update member fields
+        if member.name != newName:
             member.name = newName
-        if member.phone_number is not newNumber:
+        if member.phone_number != newNumber:
             member.phone_number = newNumber
-        if member.member_name is not newMember:
+        if member.member_name != newMember:
             member.member_name = newMember
+
+        # Update user email
+        if user.email != newEmail:
+            user.email = newEmail
+
         db.session.commit()
         flash("Updated Successfully!", category="success")
 
-    except:
-        flash("Failed to update", category="danger")
+    except Exception as e:
+        flash(f"Failed to update: {str(e)}", category="danger")
 
     return redirect(url_for('members_bp.members_page'))
 
@@ -252,7 +254,6 @@ def cancel_membership(member_id):
     return redirect(url_for('members_bp.members_page'))
 
 
-# Add to member_routes.py
 @members_bp.route('/update-member-password/<int:member_id>', methods=['POST'])
 def update_member_password(member_id):
     member = Member.query.get(member_id)
@@ -264,6 +265,15 @@ def update_member_password(member_id):
     if form.validate_on_submit():
         user = User.query.get(member.user_id)
         if user:
+            # Additional validation
+            if len(form.new_password.data) < 8:
+                flash("Password must be at least 8 characters", category="danger")
+                return redirect(url_for('members_bp.members_page'))
+
+            if not any(char in '!@#$%^&*(),.?":{}|<>' for char in form.new_password.data):
+                flash("Password must contain at least one special character", category="danger")
+                return redirect(url_for('members_bp.members_page'))
+
             user.password = generate_password_hash(form.new_password.data)
             db.session.commit()
             flash("Password updated successfully!", category="success")
