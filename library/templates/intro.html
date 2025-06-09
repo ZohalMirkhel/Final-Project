@@ -4,95 +4,201 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Welcome to Vault Verse</title>
+    <title>Welcome to The Library</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: #A85605;
+            --secondary: #001F1F;
+            --light-accent: rgba(168, 86, 5, 0.1);
+            --text-light: #F5F5F5;
+            --text-dark: #333;
+        }
+
         body {
             margin: 0;
             padding: 0;
-            font-family: 'Georgia', serif;
-            background: rgba(0, 0, 0, 0.5) url('static/images/10.jpg');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
+            font-family: 'Open Sans', sans-serif;
+            background-color: var(--secondary);
+            color: var(--text-light);
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(168, 86, 5, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(168, 86, 5, 0.1) 0%, transparent 20%);
         }
+
         .container {
             max-width: 800px;
-            padding: 50px;
+            padding: 60px;
             text-align: center;
-            background-color: rgba(255, 255, 255, 0.3);
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            background-color: rgba(0, 31, 31, 0.9);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(168, 86, 5, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
         }
 
         h1 {
-            font-size: 4em;
-            margin-bottom: 50px;
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5em;
+            margin-bottom: 40px;
+            color: var(--text-light);
+            position: relative;
+            display: inline-block;
+        }
+
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 25%;
+            width: 50%;
+            height: 2px;
+            background: var(--primary);
         }
 
         .role-selection {
             display: flex;
-            gap: 100px;
+            gap: 60px;
             justify-content: center;
-            margin-bottom: 20px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
         }
 
-        .role-selection label {
+        .role-option {
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .role-option:hover {
+            transform: translateY(-5px);
+        }
+
+        .role-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .role-label {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            cursor: pointer;
-            font-size: 1.9em;
+            padding: 25px;
+            border-radius: 12px;
+            background-color: rgba(0, 31, 31, 0.7);
+            border: 2px solid rgba(168, 86, 5, 0.3);
+            transition: all 0.3s ease;
+            min-width: 180px;
         }
 
-        .role-selection input[type="radio"] {
-            appearance: none;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            width: 20px;
-            height: 20px;
-            border: 2px solid #000;
-            border-radius: 3px;
-            margin-right: 10px;
-            cursor: pointer;
+        .role-option input[type="radio"]:checked + .role-label {
+            background-color: rgba(168, 86, 5, 0.2);
+            border-color: var(--primary);
+            box-shadow: 0 5px 15px rgba(168, 86, 5, 0.2);
         }
 
-        .role-selection input[type="radio"]:checked {
-            background-color: #3498db;
+        .role-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+
+        .role-name {
+            font-size: 1.5em;
+            font-weight: 600;
         }
 
         .select-button {
-            padding: 15px 30px;
-            font-size: 1.2em;
-            background-color: #3498db;
-            color: #fff;
+            padding: 16px 40px;
+            font-size: 1.1em;
+            background-color: var(--primary);
+            color: var(--text-light);
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .select-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: all 0.5s ease;
         }
 
         .select-button:hover {
-            background-color: #82EE48;
+            background-color: #C46A15;
+            box-shadow: 0 5px 15px rgba(168, 86, 5, 0.4);
+        }
+
+        .select-button:hover::before {
+            left: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 40px 20px;
+                width: 90%;
+            }
+
+            h1 {
+                font-size: 2.5em;
+            }
+
+            .role-selection {
+                gap: 20px;
+                flex-direction: column;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Welcome to Vault Verse</h1>
+        <h1>Welcome to The Library</h1>
 
         <div class="role-selection">
-            <label>
-                <input type="radio" name="role" value="admin"> Librarian
-            </label>
-            <label>
-                <input type="radio" name="role" value="client"> Reader
-            </label>
+            <div class="role-option">
+                <input type="radio" name="role" value="admin" id="admin-role">
+                <label for="admin-role" class="role-label">
+                    <div class="role-icon">📚</div>
+                    <div class="role-name">Librarian</div>
+                </label>
+            </div>
+
+            <div class="role-option">
+                <input type="radio" name="role" value="client" id="client-role">
+                <label for="client-role" class="role-label">
+                    <div class="role-icon">📖</div>
+                    <div class="role-name">Reader</div>
+                </label>
+            </div>
         </div>
 
-        <button class="select-button" onclick="redirectToLogin()">Select Role</button>
+        <button class="select-button" onclick="redirectToLogin()">Enter The Library</button>
     </div>
 
     <script>
@@ -117,7 +223,6 @@
             alert('Please select a role before proceeding.');
         }
     }
-</script>
-
+    </script>
 </body>
 </html>
