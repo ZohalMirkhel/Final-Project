@@ -9,6 +9,9 @@
     {% include 'members/add_member_modal.html' %}
     {% include 'transactions/borrow_book_modal.html' %}
     {% include 'transactions/return_book_modal.html' %}
+    {% with available_books=books_for_sale, endpoint='transactions_bp.sell_book' %}
+        {% include 'transactions/sell_book_modal.html' %}
+    {% endwith %}
 
     <button type="button" class="btn btn-dark m" data-bs-toggle="modal" data-bs-target="#memberModal">
         Create
@@ -22,39 +25,125 @@
         Return
     </button>
 
+    <button type="button" class="btn btn-dark m" data-bs-toggle="modal" data-bs-target="#sellBookModal">
+        Sell
+    </button>
+
     {% if length > 0 %}
         <table class="table">
             <thead class="table-dark">
-                <tr>
-                    <th scope="col" class="table-id">ID</th>
-                    <th scope="col">Name</th>
-                    <th scope="col">Membername</th>
-                    <th scope="col">Phone Number</th>
-                    <th scope="col">Amount to Pay</th>
-                    <th scope="col"></th>
-                </tr>
+                 <tr>
+        <th scope="col" class="table-id">ID</th>
+        <th scope="col">Name</th>
+        <th scope="col">Membername</th>
+        <th scope="col">Phone Number</th>
+        <th scope="col">Membership Start</th>
+        <th scope="col">Membership Expiry</th>
+        <th scope="col">Status</th>
+        <th scope="col">Amount Paid</th>
+        <th scope="col">Cancellation</th>
+        <th scope="col">Refund</th>
+        <th scope="col"></th>
+    </tr>
             </thead>
             <tbody>
                 {% for member in members %}
-                    {% include 'members/delete_member_modal.html' %}
                     {% include 'members/update_member_modal.html' %}
                     <tr>
                         <th scope="row" class="table-id">{{ member.id }}</th>
                         <td>{{ member.name }}</td>
                         <td>{{ member.member_name }}</td>
                         <td>{{ member.phone_number }}</td>
-                        <td>{{ member.to_pay }}</td>
+                        <td>{{ member.membership_start.strftime('%Y-%m-%d') }}</td>
+        <td>{{ member.membership_expiry.strftime('%Y-%m-%d') }}</td>
+        <td>{{ member.membership_status|title }}</td>
+                        <td>
+                            ${{ member.total_paid|round(2) }}
+                        </td>
+        <td>
+            {% if member.cancellation_date %}
+                {{ member.cancellation_date.strftime('%Y-%m-%d') }}
+            {% else %}
+                -
+            {% endif %}
+        </td>
+        <td>
+            {% if member.refund_amount %}
+                ${{ member.refund_amount|round(2) }}
+            {% else %}
+                -
+            {% endif %}
+        </td>
                         <td class="action">
-                            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal-{{member.id}}">
-                                Delete
-                            </button>
 
-                            <button type="button" class="btn btn-primary " data-bs-toggle="modal" data-bs-target="#updateMemberModal-{{member.id}}">
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#updateMemberModal-{{member.id}}">
                                 Update
                             </button>
-                            
+
+                            <!-- Added Renew Membership Button -->
+                            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#renewModal-{{member.id}}">
+                                Renew Membership
+                            </button>
+
+                            <button type="button" class="btn btn-danger"
+        data-bs-toggle="modal"
+        data-bs-target="#cancelModal-{{member.id}}">
+    Cancel Membership
+</button>
                         </td>
                     </tr>
+
+                    <!-- Renewal Modal for each member -->
+                    <div class="modal fade" id="renewModal-{{member.id}}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Renew Membership</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="mb-3">
+    <label class="form-label">Fee per Month:</label>
+    <input type="number" name="fee" min="20" value="{{ member.membership_fee or 20 }}" class="form-control">
+</div>
+                                <div class="modal-body">
+                                    <form action="{{ url_for('members_bp.renew_membership', member_id=member.id) }}" method="POST">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <div class="mb-3">
+                                            <label class="form-label">Months:</label>
+                                            <input type="number" name="months" min="1" value="1" class="form-control">
+                                        </div>
+                                        <div class="mb-3">
+                                            <p>Cost: $20 per month</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="submit" class="btn btn-primary">Renew</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cancel Membership Modal -->
+<div class="modal fade" id="cancelModal-{{member.id}}">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cancel Membership</h5>
+            </div>
+            <div class="modal-body">
+                <p>Cancel membership for {{ member.name }}?</p>
+                <form action="{{ url_for('members_bp.cancel_membership', member_id=member.id) }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                        <button type="submit" class="btn btn-danger">Yes, Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
                 {% endfor %}
             </tbody>
         </table>

@@ -1,0 +1,118 @@
+<form action="{{ url_for(endpoint) }}" method="POST">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="modal fade" id="sellBookModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Sell Book</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Hidden book ID field -->
+                <input type="hidden" id="sell_book_id" name="book_id">
+
+                <!-- Dynamic content area -->
+                <div class="mb-3" id="specific-book-display" style="display:none;">
+                    <label class="form-label">Book</label>
+                    <div id="sell_book_title" class="form-control-plaintext">-</div>
+                </div>
+
+                <!-- Book selection dropdown -->
+                <div class="mb-3" id="book-selection-dropdown">
+                    <label class="form-label">Select Book</label>
+                    <select class="form-select" id="book_selection">
+                        <option value="">Choose a book</option>
+                        {% for book in available_books %}
+                        <option value="{{ book.id }}"
+                            data-title="{{ book.title }}"
+                            data-price="{{ book.price }}">
+                            {{ book.title }} ({{ book.stock }} available)
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Member ID</label>
+                    <input type="text" class="form-control" name="member_id" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Price (₹)</label>
+                    <input type="number" class="form-control" id="price" name="price" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Sell</button>
+            </div>
+        </div>
+    </div>
+</div>
+</form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const sellModal = document.getElementById('sellBookModal');
+        const bookSelection = document.getElementById('book_selection');
+        const specificBookDisplay = document.getElementById('specific-book-display');
+        const bookSelectionDropdown = document.getElementById('book-selection-dropdown');
+
+        // Remove required attribute initially
+        bookSelection.removeAttribute('required');
+
+        // Handle book selection from dropdown
+        bookSelection.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption.value) {
+                document.getElementById('sell_book_id').value = selectedOption.value;
+                document.getElementById('sell_book_title').textContent = selectedOption.dataset.title;
+                document.getElementById('price').value = selectedOption.dataset.price || '0';
+            }
+        });
+
+        // Handle modal show event
+        sellModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+
+            // Reset form
+            document.getElementById('sell_book_id').value = '';
+            specificBookDisplay.style.display = 'none';
+            bookSelectionDropdown.style.display = 'block';
+            bookSelection.selectedIndex = 0;
+            document.getElementById('price').value = '';
+            document.querySelector('input[name="member_id"]').value = '';
+
+            // Remove required attribute initially
+            bookSelection.removeAttribute('required');
+
+            // If triggered from book-specific button
+            if (button && button.hasAttribute('data-book-id')) {
+                const bookId = button.getAttribute('data-book-id');
+                const bookTitle = button.getAttribute('data-book-title');
+                const bookPrice = button.getAttribute('data-book-price');
+
+                document.getElementById('sell_book_id').value = bookId;
+                document.getElementById('sell_book_title').textContent = bookTitle;
+                document.getElementById('price').value = bookPrice || '0';
+
+                // Show specific book display and hide dropdown
+                specificBookDisplay.style.display = 'block';
+                bookSelectionDropdown.style.display = 'none';
+
+                // Remove required since we're using specific book
+                bookSelection.removeAttribute('required');
+            } else {
+                // Add required for dropdown mode
+                bookSelection.setAttribute('required', true);
+            }
+        });
+
+        // Reset on modal close
+        sellModal.addEventListener('hidden.bs.modal', function() {
+            specificBookDisplay.style.display = 'none';
+            bookSelectionDropdown.style.display = 'block';
+            bookSelection.selectedIndex = 0;
+            bookSelection.removeAttribute('required');
+        });
+    });
+</script>

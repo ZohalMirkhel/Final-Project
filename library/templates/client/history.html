@@ -1,6 +1,42 @@
-<h2>My Checkout History</h2>
+<!-- history.html -->
+{% extends 'base_client.html' %}
+
+{% block content %}
+<h2>My History</h2>
+
+<!-- Borrowed Books Section -->
+{% if checkouts %}
+<h3>Borrowed Books</h3>
 <ul>
   {% for c in checkouts %}
-    <li>{{ c.book.title }} - Borrowed: {{ c.checkout_date }} {% if c.return_date %} | Returned: {{ c.return_date }}{% else %} | Not Returned {% endif %}</li>
+    <li>
+      {{ c.book.title }} -
+      Borrowed: {{ c.checkout_date.strftime('%Y-%m-%d') }}
+      {% if c.return_date %}
+        | Returned: {{ c.return_date.strftime('%Y-%m-%d') }}
+      {% else %}
+        | Not Returned
+      {% endif %}
+    </li>
   {% endfor %}
 </ul>
+{% endif %}
+
+<!-- Purchased Books Section -->
+{% if purchases %}
+<h3>Purchased Books</h3>
+<ul>
+  {% for p in purchases %}
+    <li>
+      {{ p.book.title }} -
+      Purchased on: {{ p.date.strftime('%Y-%m-%d') }}
+      for ${{ p.amount }}
+    </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% if not checkouts and not purchases %}
+<p>No history found.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends 'base_client.html' %}
+
+{% block content %}
+<h2>My Books</h2>
+
+<h3>Purchased Books</h3>
+{% if purchased %}
+<ul>
+  {% for purchase in purchased %}
+    {% set book = purchase.book if purchase.book else purchase %}
+    <li>
+      {{ book.title if book else purchase.book_name }}
+      (Purchased on {{ purchase.date.strftime('%Y-%m-%d') }})
+    </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p>No purchased books</p>
+{% endif %}
+
+<!-- Borrowed Books Section -->
+<h3>Borrowed Books</h3>
+{% if current_borrowed %}
+<ul>
+  {% for checkout, book in current_borrowed %}
+  <li>
+    {{ book.title }}
+    (Due: {{ checkout.due_date.strftime('%Y-%m-%d') if checkout.due_date else 'N/A' }})
+    <a href="{{ url_for('client.return_book', book_id=book.id) }}">Return</a>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p>No borrowed books</p>
+{% endif %}
+{% endblock %}

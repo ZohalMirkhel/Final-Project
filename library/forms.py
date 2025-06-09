@@ -1,8 +1,9 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, SubmitField
-from wtforms.validators import Length, DataRequired, ValidationError
-from library.models import Member, Book, Transaction
-
+from wtforms import StringField, IntegerField, SubmitField, TextAreaField, SelectField, FloatField, PasswordField, BooleanField
+from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, Optional, NumberRange, InputRequired
+from library.models import Member, Book, Transaction, User
+from flask_login import current_user
+from wtforms.fields import EmailField
 
 # form for creating and updating members
 class member_form(FlaskForm):
@@ -10,6 +11,8 @@ class member_form(FlaskForm):
     # check if unique memberName already exists
     def validate_member_name(self, member_name_to_check):
         member = Member.query.filter_by(member_name=member_name_to_check.data).first()
+        if member and (not self.obj or member.id != self.obj.id):
+            raise ValidationError('Username already exists!')
         if member:
             raise ValidationError('Username already exists! Please try a different Member Name')
 
@@ -19,6 +22,9 @@ class member_form(FlaskForm):
         if phone:
             raise ValidationError('Phone Number already exists! Please try a different Phone Number')
 
+    membership_months = IntegerField(label='Membership Months',
+                                     validators=[InputRequired(), NumberRange(min=1)])
+    membership_fee = FloatField('Membership Fee', validators=[InputRequired(), NumberRange(min=20)])
     name = StringField(label='Name', validators=[Length(min=2, max=30), DataRequired()])
     member_name = StringField(label='Member Name', validators=[Length(min=2, max=30), DataRequired()])
     phone_number = StringField(label='Phone Number', validators=[DataRequired()])
@@ -33,10 +39,86 @@ class book_form(FlaskForm):
         if book:
             raise ValidationError('Book already exists')
 
-    title = StringField(label='Title', validators=[DataRequired()])
-    isbn = StringField(label='ISBN', validators=[DataRequired()])
-    author = StringField(label='Author', validators=[DataRequired()])
-    stock = IntegerField(label='Stock', validators=[DataRequired()])
-    submit = SubmitField(label='Submit')
+    title = StringField('Title', validators=[InputRequired()])
+    isbn = StringField('ISBN', validators=[InputRequired()])
+    author = StringField('Author', validators=[InputRequired()])
+    category = StringField('Category', validators=[InputRequired()])
+    price = FloatField('Price', validators=[DataRequired()])
+    stock = IntegerField('Stock', validators=[InputRequired()])
+    submit = SubmitField('Add Book')
 
+
+class FeedbackForm(FlaskForm):
+    content = TextAreaField('Feedback', validators=[InputRequired()])
+    rating = SelectField('Rating', choices=[(1, '1 Star'), (2, '2 Stars'),
+                                          (3, '3 Stars'), (4, '4 Stars'),
+                                          (5, '5 Stars')], coerce=int)
+    submit = SubmitField('Submit')
+
+class LoginForm(FlaskForm):
+    email = EmailField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    remember = BooleanField('Remember Me')
+    submit = SubmitField('Login')
+
+class MembershipForm(FlaskForm):
+    months = SelectField('Months', choices=[
+        (1, '1 Month - $20'),
+        (3, '3 Months - $60'),
+        (6, '6 Months - $120'),
+        (12, '1 Year - $240')
+    ], coerce=int)
+    submit = SubmitField('Buy/Renew Membership')
+
+
+class ProfileForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired(), Length(min=2, max=100)])
+    email = EmailField('Email', validators=[DataRequired(), Email()])
+    phone = StringField('Phone', validators=[DataRequired()])
+    address = StringField('Address', validators=[DataRequired(), Length(min=5, max=200)])
+    member_name = StringField('Username', validators=[Optional(), Length(min=2, max=30)])
+    submit = SubmitField('Update Profile')
+
+    # Custom validation to ensure unique email/phone
+    def validate_email(self, email):
+        if email.data != current_user.email:
+            user = User.query.filter_by(email=email.data).first()
+            if user:
+                raise ValidationError('That email is already in use!')
+
+    def validate_phone(self, phone):
+        if phone.data != current_user.phone:
+            user = User.query.filter_by(phone=phone.data).first()
+            if user:
+                raise ValidationError('That phone number is already in use!')
+
+# Add to forms.py
+class RegistrationForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired(), Length(min=2, max=100)])
+    phone = StringField('Phone', validators=[DataRequired()])
+    email = EmailField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    address = StringField('Address', validators=[DataRequired(), Length(min=5, max=200)])
+    role = SelectField('Role', choices=[('customer', 'Customer')])
+    submit = SubmitField('Register')
+
+    def validate_phone(self, phone):
+        user = User.query.filter_by(phone=phone.data).first()
+        if user:
+            raise ValidationError('That phone number is already in use!')
+
+    def validate_email(self, email):
+        user = User.query.filter_by(email=email.data).first()
+        if user:
+            raise ValidationError('That email is already in use!')
+
+
+class ReturnBookForm(FlaskForm):
+    book_id = SelectField('Book', coerce=int)
+    submit = SubmitField('Return Book')
+
+class EmptyForm(FlaskForm):
+    class Meta:
+        csrf = True
+    submit = SubmitField()
 

@@ -10,9 +10,15 @@
             </div>
             <div class="modal-body">
                 <form action="./import-from-frappe" method="POST">
-
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <label>Title</label><br/>
-                    <input type="text" name="title" placeholder="Title"/>
+                    <input type="text" name="title" placeholder="Title" required/>
+
+                    <label>Category</label><br/>
+                    <input type="text" name="category" placeholder="Category" required/>
+
+                    <label>Price (USD)</label><br/>
+                    <input type="number" step="0.01" name="price" placeholder="Price" min="0.01" required/>
 
                     <div class="modal-footer">
                         <button type="submit" class="btn btn-primary">Import</button>

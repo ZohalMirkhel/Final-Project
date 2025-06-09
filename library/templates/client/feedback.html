@@ -1,0 +1,66 @@
+<!-- feedback.html - updated content -->
+{% extends 'base_client.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <h2>Submit Feedback</h2>
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            <div class="form-group">
+                {{ form.content.label }}<br>
+                {{ form.content(class="form-control", rows=4) }}
+                {% for error in form.content.errors %}
+                    <span style="color: red;">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                {{ form.rating.label }}<br>
+                {{ form.rating(class="form-control") }}
+                {% for error in form.rating.errors %}
+                    <span style="color: red;">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+
+    <div class="col-md-6">
+        <h2>All Feedbacks</h2>
+        {% if feedbacks %}
+            <div class="feedback-list">
+                {% for feedback in feedbacks %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <h5 class="card-title">
+                                    {% if feedback.member %}
+                                        {{ feedback.member.name }} (Member)
+                                    {% elif feedback.user %}
+                                        {{ feedback.user.name }} (User)
+                                    {% else %}
+                                        Anonymous
+                                    {% endif %}
+                                </h5>
+                                <div class="text-warning">
+                                    {% for i in range(feedback.rating) %}
+                                        ★
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <p class="card-text">{{ feedback.content }}</p>
+                            <p class="text-muted">
+                                <small>{{ feedback.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>No feedbacks yet. Be the first to share!</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

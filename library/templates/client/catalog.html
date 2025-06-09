@@ -1,13 +1,70 @@
-<h2>Available Books</h2>
-<form method="get">
-  <input name="q" placeholder="Search..." value="{{ query }}">
-  <button type="submit">Search</button>
-</form>
-<ul>
-  {% for book in books %}
-    <li>
-      {{ book.title }} by {{ book.author }}
-      <a href="{{ url_for('client.checkout', book_id=book.id) }}">Borrow</a>
-    </li>
-  {% endfor %}
-</ul>
+{% extends 'base_client.html' %}
+
+{% block content %}
+<div class="container py-4">
+  <h2 class="mb-4">Available Books</h2>
+
+  <form method="GET" class="row g-3 mb-4" value="{{ csrf_token() }}">
+    <div class="col-md-6">
+      <input name="q" placeholder="Search books..." value="{{ query }}"
+             class="form-control form-control-lg">
+    </div>
+    <div class="col-md-4">
+      <select name="category" class="form-select form-select-lg">
+        <option value="">All Categories</option>
+        {% for category in categories %}
+          <option value="{{ category }}" {% if category == selected_category %}selected{% endif %}>
+            {{ category }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-primary btn-lg w-100">Search</button>
+    </div>
+  </form>
+
+  {% if books|length == 0 %}
+    <div class="alert alert-info text-center">
+      No books found matching your criteria
+    </div>
+  {% endif %}
+
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+    {% for book in books %}
+      <div class="col">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">{{ book.title }}</h5>
+            <p class="card-text">
+              <span class="text-muted">Author:</span> {{ book.author }}<br>
+              <span class="text-muted">Category:</span> {{ book.category }}
+            </p>
+          </div>
+          <div class="card-footer bg-white">
+            <div class="d-grid gap-2">
+              <form method="POST" action="{{ url_for('client.add_to_cart', book_id=book.id) }}">
+                {{ form.hidden_tag() }}
+                <input type="hidden" name="action" value="borrow">
+                <button type="submit" class="btn btn-outline-primary w-100 mb-2">
+                  Borrow
+                </button>
+              </form>
+
+              {% if book.price > 0 %}
+              <form method="POST" action="{{ url_for('client.add_to_cart', book_id=book.id) }}">
+                {{ form.hidden_tag() }}
+                <input type="hidden" name="action" value="buy">
+                <button type="submit" class="btn btn-success w-100">
+                  Buy (${{ book.price }})
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

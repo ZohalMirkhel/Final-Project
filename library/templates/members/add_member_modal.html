@@ -7,7 +7,8 @@
             </div>
 
             <div class="modal-body text-left">
-                <form action="/members" method="POST">
+                <form action="/members" method="POST" value="{{ csrf_token() }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                     {{ member_form.hidden_tag() }}
 
@@ -19,6 +20,12 @@
 
                     {{ member_form.member_name.label() }}
                     {{ member_form.member_name(class="form-control", placeholder="Membername(unique)") }}
+
+                    {{ member_form.membership_months.label() }}
+{{ member_form.membership_months(class="form-control", value="1") }}
+
+                    {{ member_form.membership_fee.label() }}
+{{ member_form.membership_fee(class="form-control", placeholder="Membership Fee", value="20") }}
 
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
