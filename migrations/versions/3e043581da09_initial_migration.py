@@ -1,8 +1,8 @@
-"""Your message here
+"""Initial migration
 
-Revision ID: 890892b9ab2d
+Revision ID: 3e043581da09
 Revises: 
-Create Date: 2025-06-08 22:38:40.777253
+Create Date: 2025-06-09 20:04:32.082749
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '890892b9ab2d'
+revision = '3e043581da09'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -66,8 +66,8 @@ def upgrade():
     sa.Column('cancellation_date', sa.DateTime(), nullable=True),
     sa.Column('refund_amount', sa.Float(), nullable=True),
     sa.Column('membership_start', sa.DateTime(), nullable=True),
-    sa.Column('membership_fee', sa.Float(), nullable=True),
     sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('membership_fee', sa.Float(), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('member_name'),
@@ -112,7 +112,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('book_name', sa.String(length=100), nullable=False),
     sa.Column('member_name', sa.String(), nullable=True),
-    sa.Column('type_of_transaction', sa.String(length=7), nullable=False),
+    sa.Column('type_of_transaction', sa.String(length=30), nullable=False),
     sa.Column('date', sa.Date(), nullable=True),
     sa.Column('amount', sa.Float(), nullable=True),
     sa.Column('book_id', sa.Integer(), nullable=True),

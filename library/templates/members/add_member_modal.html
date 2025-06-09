@@ -7,34 +7,37 @@
             </div>
 
             <div class="modal-body text-left">
-                <form action="/members" method="POST" value="{{ csrf_token() }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <form action="/members" method="POST">
+                    {{ admin_form.hidden_tag() }}
 
-                    {{ member_form.hidden_tag() }}
+                    {{ admin_form.name.label() }}
+                    {{ admin_form.name(class="form-control", placeholder="Full Name") }}
 
-                    {{ member_form.name.label() }}
-                    {{ member_form.name(class="form-control", placeholder="Name") }}
+                    {{ admin_form.member_name.label() }}
+                    {{ admin_form.member_name(class="form-control", placeholder="Username") }}
 
-                    {{ member_form.phone_number.label() }}
-                    {{ member_form.phone_number(class="form-control", placeholder="Phone Number") }}
+                    {{ admin_form.email.label() }}
+                    {{ admin_form.email(class="form-control", placeholder="Email") }}
 
-                    {{ member_form.member_name.label() }}
-                    {{ member_form.member_name(class="form-control", placeholder="Membername(unique)") }}
+                    {{ admin_form.phone.label() }}
+                    {{ admin_form.phone(class="form-control", placeholder="Phone") }}
 
-                    {{ member_form.membership_months.label() }}
-{{ member_form.membership_months(class="form-control", value="1") }}
+                    {{ admin_form.address.label() }}
+                    {{ admin_form.address(class="form-control", placeholder="Address") }}
 
-                    {{ member_form.membership_fee.label() }}
-{{ member_form.membership_fee(class="form-control", placeholder="Membership Fee", value="20") }}
+                    {{ admin_form.password.label() }}
+                    {{ admin_form.password(class="form-control", placeholder="Password") }}
+
+                    {{ admin_form.membership_months.label() }}
+                    {{ admin_form.membership_months(class="form-control") }}
 
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                             Close
                         </button>
-                        {{member_form.submit(class="btn btn-primary")}}
+                        {{ admin_form.submit(class="btn btn-primary") }}
                     </div>
                 </form>
-
             </div>
         </div>
     </div>

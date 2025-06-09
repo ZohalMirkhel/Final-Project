@@ -3,8 +3,8 @@ from flask_login import login_required, current_user, logout_user
 from datetime import datetime, date, timedelta
 from flask import flash
 from library.models import Book, Checkout, Cart, Feedback, Transaction, Member, Book_borrowed, User
-from library.forms import EmptyForm, ProfileForm, MembershipForm, ReturnBookForm, FeedbackForm
-from sqlalchemy import or_
+from library.forms import EmptyForm, ProfileForm, MembershipForm, ReturnBookForm, FeedbackForm, ChangePasswordForm
+from werkzeug.security import generate_password_hash, check_password_hash
 from library import db
 client = Blueprint('client', __name__)
 
@@ -138,7 +138,8 @@ def client_home():
 @client.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
-    form = ProfileForm()  # ← Add this line
+    form = ProfileForm()
+    password_form = ChangePasswordForm()
     member = Member.query.filter_by(user_id=current_user.id).first()
 
     membership_fee = member.membership_fee if member else 0
@@ -186,6 +187,7 @@ def profile():
 
     return render_template('client/profile.html',
                            form=form,
+                           password_form=password_form,
                            member=member,
                            refund_amount=refund_amount,
                            membership_fee=membership_fee)
@@ -584,7 +586,7 @@ def cancel_membership():
     total_days = (member.membership_expiry - member.membership_start).days
     used_days = (datetime.utcnow() - member.membership_start).days
     unused_days = max(0, total_days - used_days)
-    refund = (unused_days / total_days) * (member.membership_fee * (total_days / 30)) * 0.5
+    refund_amount = (unused_days / total_days) * (member.membership_fee * (total_days / 30)) * 0.5
 
     # Delete dependent records first
     Checkout.query.filter_by(member_id=member.id).delete()
@@ -592,16 +594,15 @@ def cancel_membership():
     Feedback.query.filter_by(member_id=member.id).delete()
     Transaction.query.filter_by(member_id=member.id).delete()
 
-    # Now delete the member
     db.session.delete(member)
 
     # Record transaction under user instead of member
     transaction = Transaction(
         book_name="Membership Refund",
         type_of_transaction="refund",
-        amount=-refund,
+        amount=-refund_amount,
         date=date.today(),
-        user_id=current_user.id  # Associate with user instead of member
+        user_id=current_user.id
     )
     db.session.add(transaction)
 
@@ -609,7 +610,7 @@ def cancel_membership():
 
     return jsonify({
         'success': True,
-        'message': f'Membership cancelled. Refund amount: ${refund:.2f}'
+        'message': f'Membership cancelled. Refund amount: ${refund_amount:.2f}'
     })
 
 @client.route('/return-book', methods=['POST'])
@@ -707,3 +708,23 @@ def feedback():
 def feedbacks():
     feedbacks = Feedback.query.all()
     return render_template('client/feedbacks.html', feedbacks=feedbacks)
+
+
+# Add to client_routes.py
+@client.route('/change-password', methods=['POST'])
+@login_required
+def change_password():
+    form = ChangePasswordForm()
+    if form.validate_on_submit():
+        if not check_password_hash(current_user.password, form.current_password.data):
+            flash("Current password is incorrect", "danger")
+            return redirect(url_for('client.profile'))
+
+        current_user.password = generate_password_hash(form.new_password.data)
+        db.session.commit()
+        flash("Password updated successfully!", "success")
+    else:
+        for error in form.errors.values():
+            flash(f"Error: {error[0]}", "danger")
+
+    return redirect(url_for('client.profile'))

@@ -24,6 +24,21 @@
                         {{member_form.submit(class="btn btn-primary")}}
                     </div>
                 </form>
+                <div class="mt-4">
+    <h5>Update Password</h5>
+    <form action="{{ url_for('members_bp.update_member_password', member_id=member.id) }}" method="POST">
+        {{ admin_password_form.hidden_tag() }}
+        <div class="mb-3">
+            {{ admin_password_form.new_password.label(class="form-label") }}
+            {{ admin_password_form.new_password(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ admin_password_form.confirm_password.label(class="form-label") }}
+            {{ admin_password_form.confirm_password(class="form-control") }}
+        </div>
+        <button type="submit" class="btn btn-warning">Update Password</button>
+    </form>
+</div>
             </div>
         </div>
     </div>
