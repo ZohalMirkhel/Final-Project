@@ -5,17 +5,16 @@
 {% if cart_items %}
 <ul>
   {% for item in cart_items %}
-<li>
-  {{ item.book.title }} ({{ item.action|capitalize }})
-  {% if item.action == 'buy' %}
-    - ${{ item.book.price }}
-  {% endif %}
-  <a href="{{ url_for('client.remove_from_cart', cart_id=item.id) }}">Remove</a>
-</li>
+  <li>
+    {{ item.book.title }} ({{ item.action|capitalize }})
+    {% if item.action == 'buy' %}
+      - ${{ item.book.price }}
+    {% endif %}
+    <a href="{{ url_for('client.remove_from_cart', cart_id=item.id) }}">Remove</a>
+  </li>
   {% endfor %}
 </ul>
 
-<!-- Show delivery fee and total -->
 <div class="cart-summary">
   <p>Subtotal: ${{ "%.2f"|format(subtotal) }}</p>
   <p>Delivery fee: ${{ "%.2f"|format(delivery_fee) }}</p>
@@ -28,10 +27,53 @@
   </div>
 {% endif %}
 
-<form action="{{ url_for('client.checkout_cart') }}" method="POST" value="{{ csrf_token() }}">
-  {{ form.hidden_tag() }}
-  <button type="submit" class="btn btn-primary">Checkout</button>
-</form>
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Payment Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="paymentForm" method="POST" action="{{ url_for('client.checkout_cart') }}">
+          {{ form.hidden_tag() }}
+          {{ payment_form.hidden_tag() }}
+          <div class="mb-3">
+            <label class="form-label">Cardholder Name</label>
+            {{ payment_form.cardholder_name(class="form-control") }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Card Number</label>
+            {{ payment_form.card_number(class="form-control") }}
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Expiration Date (MM/YY)</label>
+              {{ payment_form.expiry_date(class="form-control") }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">CVV/CVC</label>
+              {{ payment_form.cvv(class="form-control") }}
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Billing Address (optional)</label>
+            {{ payment_form.billing_address(class="form-control") }}
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Confirm Payment</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paymentModal">
+  Proceed to Checkout
+</button>
 
 {% else %}
 <p>Your cart is empty</p>

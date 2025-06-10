@@ -7,12 +7,24 @@ from library.models import Feedback
 from library.forms import book_form, member_form, LoginForm, AdminCreateMemberForm
 from library.models import Book, Member
 from flask import Blueprint, render_template, redirect, url_for, current_app
+# for test email from flask_mail import Mail, Message
 routes_bp = Blueprint('routes_bp', __name__)
-
 
 @routes_bp.route('/')
 def welcome():
     return render_template('intro.html')
+
+
+# @routes_bp.route('/send-test-email')
+# def send_test_email():
+#     msg = Message(
+#         subject="Test Email",
+#         sender=current_app.config['MAIL_USERNAME'],
+#         recipients=["zohalmirkhel@gmail.com"],
+#         body="This is a test email from Flask-Mail setup!"
+#     )
+#     mail.send(msg)
+#     return "Email sent!"
 
 @routes_bp.route('/home')
 @login_required

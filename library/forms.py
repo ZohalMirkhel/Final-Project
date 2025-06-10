@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, IntegerField, SubmitField, TextAreaField, SelectField, FloatField, PasswordField, BooleanField
-from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, Optional, NumberRange, InputRequired
+from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, Optional, NumberRange, InputRequired, Regexp
 from library.models import Member, Book, Transaction, User
 from flask_login import current_user
 from wtforms.fields import EmailField
@@ -189,3 +189,20 @@ class AdminChangePasswordForm(FlaskForm):
         EqualTo('new_password', message='Passwords must match')
     ])
     submit = SubmitField('Update Password')
+
+class PaymentForm(FlaskForm):
+    cardholder_name = StringField('Cardholder Name', validators=[DataRequired()])
+    card_number = StringField('Card Number', validators=[
+        DataRequired(),
+        Length(min=15, max=16, message='Card number must be 15-16 digits')
+    ])
+    expiry_date = StringField('Expiration Date (MM/YY)', validators=[
+        DataRequired(),
+        Regexp(r'^(0[1-9]|1[0-2])\/?([0-9]{2})$', message='Format must be MM/YY')
+    ])
+    cvv = StringField('CVV/CVC', validators=[
+        DataRequired(),
+        Length(min=3, max=4, message='CVV must be 3-4 digits')
+    ])
+    billing_address = StringField('Billing Address (optional)', validators=[Optional()])
+    submit = SubmitField('Confirm Payment')

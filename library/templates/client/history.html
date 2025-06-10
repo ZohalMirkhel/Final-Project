@@ -1,4 +1,3 @@
-<!-- history.html -->
 {% extends 'base_client.html' %}
 
 {% block content %}
@@ -18,8 +17,8 @@
                         <th>Book Title</th>
                         <th>Request Date</th>
                         <th>Scheduled Pickup</th>
-                        <th>Pickup Fee</th>
-                        <th>Late Fees</th>
+                        <th>Status</th>
+                        <th>Fees</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -28,8 +27,17 @@
                         <td>{{ request.book.title }}</td>
                         <td>{{ request.request_date.strftime('%Y-%m-%d') }}</td>
                         <td>{{ request.pickup_date.strftime('%Y-%m-%d') }}</td>
-                        <td>${{ request.pickup_fee }}</td>
-                        <td>${{ request.late_fee }}</td>
+                        <td>
+                            {% if request.is_completed %}
+                                <span class="badge bg-success">Returned</span>
+                            {% else %}
+                                <span class="badge bg-warning">Pending Pickup</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            Pickup: ${{ request.pickup_fee }}<br>
+                            Late: ${{ request.late_fee }}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>

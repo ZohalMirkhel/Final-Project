@@ -1,14 +1,11 @@
-# internal imports
 from datetime import date, timedelta, datetime
-# external imports
 from flask import Blueprint, render_template, redirect, flash, request, url_for
 from flask import jsonify
 
 from library import db
-from library.models import Book, Member, Transaction, Book_borrowed, Checkout
+from library.models import Book, Member, Transaction, Book_borrowed, Checkout, ReturnRequest
 from sqlalchemy import or_
 
-# Define the blueprint
 transactions_bp = Blueprint('transactions_bp', __name__)
 
 # Route: Transactions Page
@@ -180,6 +177,16 @@ def return_book():
         if not borrow_record:
             flash("No active borrow record found", category='danger')
             return redirect_back()
+
+        # Update return request status if exists
+        return_request = ReturnRequest.query.filter_by(
+            checkout_id=borrow_record.id,
+            is_completed=False
+        ).first()
+
+        if return_request:
+            return_request.is_completed = True
+            db.session.add(return_request)
 
         # Calculate late fee
         if borrow_record.due_date and datetime.utcnow() > borrow_record.due_date:

@@ -115,30 +115,55 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                {% if member and membership_active %}
-        <!-- Show active membership details -->
-    {% else %}
-        <p>No active membership</p>
-        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#membershipModal">
-            Buy Membership
-        </button>
-    {% endif %}
+  {% if member and membership_active %}
+    <!-- Show active membership details -->
+  {% else %}
+    <p>No active membership</p>
+  {% endif %}
 
-                <form method="POST" action="{{ url_for('client.buy_membership') }}">
-                    {{ membership_form.hidden_tag() }}
-                    <div class="mb-3">
-                        <label class="form-label">Membership Options</label>
-                        {{ membership_form.months(class="form-select") }}
-                    </div>
-                    <div class="modal-footer">
-                        {% if member and membership_active %}
-                        <button type="button" class="btn btn-danger" onclick="cancelMembership()">Cancel Membership</button>
-                        {% endif %}
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Buy/Renew Membership</button>
-                    </div>
-                </form>
-            </div>
+  <form method="POST" action="{{ url_for('client.buy_membership') }}">
+    {{ membership_form.hidden_tag() }}
+    <div class="mb-3">
+      <label class="form-label">Membership Options</label>
+      {{ membership_form.months(class="form-select") }}
+    </div>
+
+    <!-- Payment Form -->
+    <div class="mb-3">
+      <h5>Payment Details</h5>
+      <div class="mb-3">
+        <label class="form-label">Cardholder Name</label>
+        <input type="text" class="form-control" name="cardholder_name" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Card Number</label>
+        <input type="text" class="form-control" name="card_number" required minlength="15" maxlength="16">
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Expiration Date (MM/YY)</label>
+          <input type="text" class="form-control" name="expiry_date" required pattern="(0[1-9]|1[0-2])\/?([0-9]{2})">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">CVV/CVC</label>
+          <input type="text" class="form-control" name="cvv" required minlength="3" maxlength="4">
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Billing Address (optional)</label>
+        <input type="text" class="form-control" name="billing_address">
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      {% if member and membership_active %}
+      <button type="button" class="btn btn-danger" onclick="cancelMembership()">Cancel Membership</button>
+      {% endif %}
+      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+      <button type="submit" class="btn btn-primary">Confirm Payment</button>
+    </div>
+  </form>
+</div>
         </div>
     </div>
 </div>
