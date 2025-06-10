@@ -14,19 +14,6 @@ routes_bp = Blueprint('routes_bp', __name__)
 def welcome():
     return render_template('intro.html')
 
-
-# @routes_bp.route('/send-test-email')
-# def send_test_email():
-#     msg = Message(
-#         subject="Test Email",
-#         sender=current_app.config['MAIL_USERNAME'],
-#         recipients=["zohalmirkhel@gmail.com"],
-#         body="This is a test email from Flask-Mail setup!"
-#     )
-#     mail.send(msg)
-#     return "Email sent!"
-
-
 @routes_bp.route('/home')
 @login_required
 def home_page():
