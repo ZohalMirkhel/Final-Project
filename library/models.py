@@ -62,7 +62,6 @@ class Book_borrowed(db.Model):
     borrowed_date = db.Column(db.DateTime, default=datetime.utcnow)
     due_date = db.Column(db.DateTime)
     return_date = db.Column(db.DateTime, nullable=True)
-    # Add these relationships
     member = db.relationship('Member', backref='admin_borrows',
                              overlaps="borrowed,current_borrowers,borrow_records")
     book = db.relationship('Book', back_populates='borrow_records',
@@ -119,8 +118,6 @@ class Cart(db.Model):
     user = db.relationship('User', backref='cart_items')
     book = db.relationship('Book', backref='cart_items')
 
-
-# Add to models.py
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -149,3 +146,18 @@ class User(UserMixin, db.Model):
 
     def is_anonymous(self):
         return False
+
+
+class ReturnRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    member_id = db.Column(db.Integer, db.ForeignKey('member.id'))
+    book_id = db.Column(db.Integer, db.ForeignKey('book.id'))
+    checkout_id = db.Column(db.Integer, db.ForeignKey('checkout.id'))
+    request_date = db.Column(db.DateTime, default=datetime.utcnow)
+    pickup_date = db.Column(db.DateTime)
+    is_completed = db.Column(db.Boolean, default=False)
+    late_fee = db.Column(db.Float, default=0.0)
+    pickup_fee = db.Column(db.Float, default=5.0)
+    member = db.relationship('Member', backref='return_requests')
+    book = db.relationship('Book', backref='return_requests')
+    checkout = db.relationship('Checkout', backref='return_request')

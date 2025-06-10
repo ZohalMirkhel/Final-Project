@@ -1,14 +1,17 @@
+from flask_mail import Message
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user, logout_user
 from datetime import datetime, date, timedelta
-from flask import flash
-from library.models import Book, Checkout, Cart, Feedback, Transaction, Member, Book_borrowed, User
+from library.models import Book, Checkout, Cart, Feedback, Transaction, Member, Book_borrowed, User, ReturnRequest
 from library.forms import EmptyForm, ProfileForm, MembershipForm, ReturnBookForm, FeedbackForm, ChangePasswordForm
 from werkzeug.security import generate_password_hash, check_password_hash
 from library import db
+import random
+from library import mail
 client = Blueprint('client', __name__)
 
 DELIVERY_FEE = 5.0
+PICKUP_FEE = 5.0
 
 #catalog
 @client.route('/catalog')
@@ -239,14 +242,26 @@ def delete_account():
     flash('Your account has been permanently deleted', 'info')
     return redirect(url_for('login_bp.client_login'))
 
+
+# client_routes.py
 @client.route('/history')
 @login_required
 def history():
     member = Member.query.filter_by(user_id=current_user.id).first()
     checkouts = []
+    pending_returns = []
+
     if member:
+        # Completed returns
         checkouts = Checkout.query.filter_by(member_id=member.id).all()
 
+        # Pending returns
+        pending_returns = ReturnRequest.query.filter(
+            ReturnRequest.member_id == member.id,
+            ReturnRequest.is_completed == False
+        ).options(db.joinedload(ReturnRequest.book)).all()
+
+    # Purchases remain the same
     purchases = Transaction.query.filter(
         ((Transaction.member_id == current_user.id) |
          (Transaction.user_id == current_user.id)),
@@ -255,6 +270,7 @@ def history():
 
     return render_template('client/history.html',
                            checkouts=checkouts,
+                           pending_returns=pending_returns,
                            purchases=purchases)
 
 # Add to cart
@@ -348,11 +364,12 @@ def view_cart():
 @client.route('/remove-from-cart/<int:cart_id>')
 @login_required
 def remove_from_cart(cart_id):
-    cart_item = Cart.query.get(cart_id)
-    if cart_item and cart_item.user_id == current_user.id:
-        db.session.delete(cart_item)
+    deleted_count = Cart.query.filter_by(id=cart_id, user_id=current_user.id).delete()
+    if deleted_count > 0:
         db.session.commit()
         flash("Removed from cart", category='success')
+    else:
+        flash("Item not found", category='danger')
     return redirect(url_for('client.view_cart'))
 
 
@@ -360,7 +377,10 @@ def remove_from_cart(cart_id):
 @client.route('/checkout-cart', methods=['POST'])
 @login_required
 def checkout_cart():
-    cart_items = Cart.query.filter_by(user_id=current_user.id).all()
+    cart_items = Cart.query.options(db.joinedload(Cart.book)) \
+        .filter_by(user_id=current_user.id) \
+        .all()
+
     borrow_items_in_cart = [item for item in cart_items if item.action == 'borrow']
     num_borrow_in_cart = len(borrow_items_in_cart)
     has_borrow_items = num_borrow_in_cart > 0
@@ -402,7 +422,7 @@ def checkout_cart():
                 item.book.available = False
 
             # Update borrow count
-            item.book.member_count = item.book.member_count + 1 if item.book.member_count else 1
+            item.book.member_count = (item.book.member_count or 0) + 1
 
             # Set due date (2 weeks from now)
             due_date = datetime.utcnow() + timedelta(days=14)
@@ -418,7 +438,6 @@ def checkout_cart():
             )
             db.session.add(borrow_transaction)
 
-            # Create checkout record
             checkout = Checkout(
                 member_id=member.id,
                 book_id=item.book.id,
@@ -428,11 +447,9 @@ def checkout_cart():
             db.session.add(checkout)
 
         elif item.action == 'buy':
-            # Update stock and sales count
             item.book.stock -= 1
             item.book.sales_count = (item.book.sales_count or 0) + 1
 
-            # Create transaction
             if current_user.is_member():
                 sale_transaction = Transaction(
                     book_name=item.book.title,
@@ -455,13 +472,16 @@ def checkout_cart():
             db.session.add(sale_transaction)
             total_amount += item.book.price
 
+        # Merge and delete the item safely
+        item = db.session.merge(item)
         db.session.delete(item)
 
-    # Add delivery fee for borrows
+    # Delivery fee for borrow transactions
     if has_borrow_items:
         if not is_active_member_status:
             flash("You need an active membership to borrow books", "danger")
             return redirect(url_for('client.view_cart'))
+
         delivery_transaction = Transaction(
             book_name="Delivery Fee",
             member_id=current_user.id,
@@ -478,7 +498,7 @@ def checkout_cart():
     return redirect(url_for('client.my_books'))
 
 
-# My Books page#
+# My Books page
 @client.route('/my-books')
 @login_required
 def my_books():
@@ -619,6 +639,11 @@ def return_book():
     book_id = request.form.get('book_id')
     member = Member.query.filter_by(user_id=current_user.id).first()
 
+    book = Book.query.get(book_id)
+    if not book:
+        flash("Book not found.", "danger")
+        return redirect(url_for('client.client_home'))
+
     if not member:
         flash("You don't have an active membership", "danger")
         return redirect(url_for('client.client_home'))
@@ -633,39 +658,109 @@ def return_book():
         flash("You haven't borrowed this book", "danger")
         return redirect(url_for('client.client_home'))
 
-    # Calculate late fee if applicable
+    # Check if return request already exists
+    existing_request = ReturnRequest.query.filter_by(
+        checkout_id=checkout.id,
+        is_completed=False
+    ).first()
+
+    if existing_request:
+        flash("Return request for this book is already pending", "info")
+        return redirect(url_for('client.client_home'))
+
+    # Calculate late fee
     late_fee = 0.0
     if checkout.due_date and datetime.utcnow() > checkout.due_date:
         days_late = (datetime.utcnow() - checkout.due_date).days
-        late_fee = days_late * 0.50  # $0.50 per day
+        late_fee = days_late * 0.50
 
-    # Update checkout record
-    checkout.return_date = datetime.utcnow()
+    # Schedule pickup in 2-4 days
+    pickup_days = random.randint(2, 4)  # Random between 2-4 days
+    pickup_date = datetime.utcnow() + timedelta(days=pickup_days)
 
-    # Update book availability
-    book = Book.query.get(book_id)
-    if book:
-        book.borrow_stock += 1
+    # Create return request
+    return_request = ReturnRequest(
+        member_id=member.id,
+        book_id=book_id,
+        checkout_id=checkout.id,
+        pickup_date=pickup_date,
+        late_fee=late_fee,
+        pickup_fee=PICKUP_FEE
+    )
+    db.session.add(return_request)
 
-    # Record late fee transaction
+    # Record transactions
     if late_fee > 0:
-        transaction = Transaction(
+        late_transaction = Transaction(
             member_name=member.member_name,
             type_of_transaction="late_fee",
             amount=late_fee,
             date=date.today(),
             member_id=member.id
         )
-        db.session.add(transaction)
+        db.session.add(late_transaction)
+
+    pickup_transaction = Transaction(
+        book_name=book.title if book else '',
+        member_name=member.member_name,
+        type_of_transaction="pickup_fee",
+        date=date.today(),
+        amount=PICKUP_FEE,
+        book_id=book.id if book else None,
+        member_id=member.id
+    )
+    db.session.add(pickup_transaction)
 
     db.session.commit()
 
-    if late_fee > 0:
-        flash(f"Book returned successfully with ${late_fee:.2f} late fee", "warning")
-    else:
-        flash("Book returned successfully", "success")
+    # Send email with pickup date
+    user_info = {
+        "name": current_user.name,
+        "email": current_user.email,
+        "phone": current_user.phone,
+        "address": current_user.address
+    }
 
+    book_info = {
+        "title": book.title if book else "N/A",
+        "isbn": book.isbn if book else "N/A"
+    }
+
+    send_pickup_notification(
+        user_info,
+        book_info,
+        checkout.due_date.strftime('%Y-%m-%d') if checkout.due_date else 'N/A',
+        pickup_date.strftime('%Y-%m-%d')
+    )
+
+    flash(f"Return requested! Book will be picked up on {pickup_date.strftime('%Y-%m-%d')}.", "success")
     return redirect(url_for('client.client_home'))
+
+
+def send_pickup_notification(user_info, book_info, due_date, pickup_date):
+    subject = f"Book Pickup Scheduled: {book_info['title']}"
+    recipient = "zohalmirkhel@gmail.com"
+
+    body = f"""
+    A book return has been scheduled:
+
+    User Details:
+      Name: {user_info['name']}
+      Email: {user_info['email']}
+      Phone: {user_info['phone']}
+      Address: {user_info['address']}
+
+    Book Details:
+      Title: {book_info['title']}
+      ISBN: {book_info['isbn']}
+      Due Date: {due_date}
+      Scheduled Pickup: {pickup_date}
+
+    Please pick up the book on the scheduled date.
+    """
+
+    msg = Message(subject=subject, recipients=[recipient], body=body)
+    mail.send(msg)
 
 # Feedback form
 @client.route('/feedback', methods=['GET', 'POST'])

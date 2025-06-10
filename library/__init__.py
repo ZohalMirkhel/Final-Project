@@ -1,68 +1,79 @@
 from flask import Flask, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from flask_login import LoginManager, current_user
+from flask_login import LoginManager
 import os
 from flask_wtf.csrf import CSRFProtect
+from flask_mail import Mail
 
-app = Flask(__name__)
-ENV = 'dev'
-
-if ENV == 'dev':
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///library.db'
-    app.config['SECRET_KEY'] = '7449cd3db56ab9b3645b5a81deb0a3b4ec0e685c502540ee'
-else:
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['SQL_DATABASE_URL']
-    app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
-
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
-csrf = CSRFProtect(app)
-
+# Initialize extensions without app first
+db = SQLAlchemy()
+migrate = Migrate()
 login_manager = LoginManager()
-login_manager.init_app(app)
+csrf = CSRFProtect()
+mail = Mail()
 
-from library.models import User, Member
+def create_app():
+    app = Flask(__name__)
+    ENV = 'dev'
 
+    if ENV == 'dev':
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(app.instance_path, 'library.db')
+        app.config['SECRET_KEY'] = 'your-secret-key'
+    else:
+        app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['SQL_DATABASE_URL']
+        app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
 
-@login_manager.user_loader
-def load_user(user_id):
-    user = User.query.get(int(user_id))
-    if user:
-        return user
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    member = Member.query.get(int(user_id))
-    if member:
-        return member
+    db.init_app(app)
+    migrate.init_app(app, db)
+    login_manager.init_app(app)
+    csrf.init_app(app)
 
-    return None
+    app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+    app.config['MAIL_PORT'] = 587
+    app.config['MAIL_USE_TLS'] = True
+    app.config['MAIL_USERNAME'] = 'zohalmirkhel@gmail.com'
+    app.config['MAIL_PASSWORD'] = 'kzeg knrt vmhf daad'
+    app.config['MAIL_DEFAULT_SENDER'] = 'zohalmirkhel@gmail.com'
 
-@login_manager.unauthorized_handler
-def unauthorized():
-    return redirect(url_for('routes_bp.welcome'))
+    mail.init_app(app)
+    from library.models import User, Member
 
-# Import blueprints
-from library.routes.book_routes import book_bp
-from library.routes.routes import routes_bp
-from library.routes.member_routes import members_bp
-from library.routes.transaction_routes import transactions_bp
-from library.routes.login_routes import login_bp
-from library.routes.client_routes import client
+    @login_manager.user_loader
+    def load_user(user_id):
+        user = User.query.get(int(user_id))
+        if user:
+            return user
+        member = Member.query.get(int(user_id))
+        return member if member else None
 
-# Register blueprints
-app.register_blueprint(book_bp)
-app.register_blueprint(routes_bp)
-app.register_blueprint(members_bp)
-app.register_blueprint(transactions_bp)
-app.register_blueprint(login_bp)
-app.register_blueprint(client, url_prefix='/client')
+    @login_manager.unauthorized_handler
+    def unauthorized():
+        return redirect(url_for('routes_bp.welcome'))
 
-# Add root redirect AFTER blueprint registration
-@app.route('/')
-def root_redirect():
-    return redirect(url_for('routes_bp.home_page'))
+    from library.routes.book_routes import book_bp
+    from library.routes.routes import routes_bp
+    from library.routes.member_routes import members_bp
+    from library.routes.transaction_routes import transactions_bp
+    from library.routes.login_routes import login_bp
+    from library.routes.client_routes import client
+
+    # Register blueprints
+    app.register_blueprint(book_bp)
+    app.register_blueprint(routes_bp)
+    app.register_blueprint(members_bp)
+    app.register_blueprint(transactions_bp)
+    app.register_blueprint(login_bp)
+    app.register_blueprint(client, url_prefix='/client')
+
+    @app.route('/')
+    def root_redirect():
+        return redirect(url_for('routes_bp.home_page'))
+
+    return app
 
 if __name__ == '__main__':
+    app = create_app()
     app.run(debug=True)

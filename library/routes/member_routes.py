@@ -1,7 +1,7 @@
 from flask import Blueprint
 from flask import render_template, redirect, url_for, flash, request
 
-from library import app, db
+from library import db
 from library.forms import AdminCreateMemberForm, member_form, AdminChangePasswordForm, UpdateMemberForm
 from werkzeug.security import generate_password_hash, check_password_hash
 from library.models import Book, Member, Transaction, User
