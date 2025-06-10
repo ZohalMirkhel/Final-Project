@@ -1,19 +1,30 @@
+from library import mail, db
 import json
-from flask import Blueprint, render_template, redirect, url_for
 from flask_login import login_required, current_user
 from sqlalchemy import desc
 from datetime import datetime
 from library.models import Feedback
-from library.forms import book_form, member_form, LoginForm
+from library.forms import book_form, member_form, LoginForm, AdminCreateMemberForm
 from library.models import Book, Member
-from library import app, db
-
+from flask import Blueprint, render_template, redirect, url_for, current_app
 routes_bp = Blueprint('routes_bp', __name__)
 
 
 @routes_bp.route('/')
 def welcome():
     return render_template('intro.html')
+
+
+# @routes_bp.route('/send-test-email')
+# def send_test_email():
+#     msg = Message(
+#         subject="Test Email",
+#         sender=current_app.config['MAIL_USERNAME'],
+#         recipients=["zohalmirkhel@gmail.com"],
+#         body="This is a test email from Flask-Mail setup!"
+#     )
+#     mail.send(msg)
+#     return "Email sent!"
 
 
 @routes_bp.route('/home')
@@ -26,10 +37,8 @@ def home_page():
     ).all()
     books_for_sale = Book.query.filter(Book.stock > 0).all()
 
-    # Fix: Get books that are currently borrowed (both admin and client)
     from library.models import Book_borrowed, Checkout
 
-    # Get admin borrows
     admin_borrowed_books = db.session.query(Book_borrowed.book_id).filter(
         Book_borrowed.return_date.is_(None)
     ).distinct()
@@ -41,18 +50,19 @@ def home_page():
     all_borrowed_book_ids = admin_borrowed_books.union(client_borrowed_books).subquery()
     books_to_return = Book.query.filter(Book.id.in_(all_borrowed_book_ids)).all()
 
+    # ✅ Create the form instance
+    admin_form = AdminCreateMemberForm()
+
     return render_template(
         'home.html',
-        member_form=member_form(),
+        admin_form=admin_form,
         book_form=book_form(),
         books_to_borrow=books_to_borrow,
         members_can_borrow=members_can_borrows,
         books_for_sale=books_for_sale,
         books_to_return=books_to_return,
-        book=False,
-        form=LoginForm()
+        book=False
     )
-
 
 @routes_bp.route('/reports', methods=['GET', 'POST'])
 @login_required

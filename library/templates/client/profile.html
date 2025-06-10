@@ -83,6 +83,30 @@
         </div>
     </div>
 </div>
+<!-- Add after Account Actions card -->
+<div class="card mt-4">
+    <div class="card-header bg-warning text-dark">
+        <h2>Change Password</h2>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('client.change_password') }}">
+            {{ password_form.hidden_tag() }}
+            <div class="mb-3">
+                {{ password_form.current_password.label(class="form-label") }}
+                {{ password_form.current_password(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ password_form.new_password.label(class="form-label") }}
+                {{ password_form.new_password(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ password_form.confirm_password.label(class="form-label") }}
+                {{ password_form.confirm_password(class="form-control") }}
+            </div>
+            <button type="submit" class="btn btn-warning">Change Password</button>
+        </form>
+    </div>
+</div>
 
 <!-- Delete Account Modal -->
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">

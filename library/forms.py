@@ -4,17 +4,24 @@ from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationE
 from library.models import Member, Book, Transaction, User
 from flask_login import current_user
 from wtforms.fields import EmailField
+import re
+
+
+def validate_password_complexity(form, field):
+    password = field.data
+    if len(password) < 8:
+        raise ValidationError('Password must be at least 8 characters long')
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+        raise ValidationError('Password must contain at least one special character')
 
 # form for creating and updating members
-class member_form(FlaskForm):
+def validate_member_name(member_name_to_check):
+    member = Member.query.filter_by(member_name=member_name_to_check.data).first()
+    if member:
+        raise ValidationError('Username already exists! Please try a different username')
 
-    # check if unique memberName already exists
-    def validate_member_name(self, member_name_to_check):
-        member = Member.query.filter_by(member_name=member_name_to_check.data).first()
-        if member and (not self.obj or member.id != self.obj.id):
-            raise ValidationError('Username already exists!')
-        if member:
-            raise ValidationError('Username already exists! Please try a different Member Name')
+
+class member_form(FlaskForm):
 
     # check if phone number already exists
     def validate_phone_number(self, phone_number_to_check):
@@ -93,6 +100,33 @@ class ProfileForm(FlaskForm):
                 raise ValidationError('That phone number is already in use!')
 
 # Add to forms.py
+class AdminCreateMemberForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired(), Length(min=2, max=100)])
+    email = EmailField('Email', validators=[DataRequired(), Email()])
+    phone = StringField('Phone', validators=[DataRequired()])
+    address = StringField('Address', validators=[DataRequired(), Length(min=5, max=200)])
+    password = PasswordField('Password', validators=[DataRequired()])
+    member_name = StringField('Username', validators=[DataRequired(), Length(min=2, max=30)])
+    membership_fee = FloatField('Fee Per Month', validators=[DataRequired(), NumberRange(min=20)], default=20.0)
+    membership_months = SelectField('Membership', choices=[
+        (1, '1 Month - $20'),
+        (3, '3 Months - $60'),
+        (6, '6 Months - $120'),
+        (12, '1 Year - $240')
+    ], coerce=int, default=1)
+    submit = SubmitField('Create Member')
+
+    def validate_email(self, email):
+        user = User.query.filter_by(email=email.data).first()
+        if user:
+            raise ValidationError('Email already in use!')
+
+    def validate_phone(self, phone):
+        user = User.query.filter_by(phone=phone.data).first()
+        if user:
+            raise ValidationError('Phone number already in use!')
+
+
 class RegistrationForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(min=2, max=100)])
     phone = StringField('Phone', validators=[DataRequired()])
@@ -122,3 +156,36 @@ class EmptyForm(FlaskForm):
         csrf = True
     submit = SubmitField()
 
+class UpdateMemberForm(FlaskForm):
+    name = StringField(label='Name', validators=[Length(min=2, max=30), DataRequired()])
+    phone_number = StringField(label='Phone Number', validators=[DataRequired()])
+    member_name = StringField(label='Member Name', validators=[Length(min=2, max=30), DataRequired()])
+    email = EmailField('Email', validators=[DataRequired(), Email()])
+    submit = SubmitField(label='Submit')
+
+# Update ChangePasswordForm
+class ChangePasswordForm(FlaskForm):
+    current_password = PasswordField('Current Password', validators=[DataRequired()])
+    new_password = PasswordField('New Password', validators=[
+        DataRequired(),
+        Length(min=8),
+        validate_password_complexity  # Add custom validator
+    ])
+    confirm_password = PasswordField('Confirm Password', validators=[
+        DataRequired(),
+        EqualTo('new_password', message='Passwords must match')
+    ])
+    submit = SubmitField('Change Password')
+
+# Update AdminChangePasswordForm
+class AdminChangePasswordForm(FlaskForm):
+    new_password = PasswordField('New Password', validators=[
+        DataRequired(),
+        Length(min=8),
+        validate_password_complexity  # Add custom validator
+    ])
+    confirm_password = PasswordField('Confirm Password', validators=[
+        DataRequired(),
+        EqualTo('new_password', message='Passwords must match')
+    ])
+    submit = SubmitField('Update Password')

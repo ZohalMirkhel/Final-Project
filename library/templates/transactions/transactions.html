@@ -48,7 +48,15 @@
         {{ transaction.book_name }}
     {% endif %}
 </td>
-                        <td>{{ transaction.member_name }}</td>
+                        <td>
+    {% if transaction.member_name %}
+        {{ transaction.member_name }}
+    {% elif transaction.user %}
+        {{ transaction.user.name }}
+    {% else %}
+        N/A
+    {% endif %}
+</td>
                         <td>{{ transaction.type_of_transaction }}</td>
                         <td>{{ transaction.date }}</td>
                         <td>{{ transaction.amount}}</td>

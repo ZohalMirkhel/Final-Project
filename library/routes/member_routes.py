@@ -1,10 +1,10 @@
-# internal imports
 from flask import Blueprint
 from flask import render_template, redirect, url_for, flash, request
 
-from library import app, db
-from library.forms import member_form
-from library.models import Book, Member, Transaction
+from library import db
+from library.forms import AdminCreateMemberForm, member_form, AdminChangePasswordForm, UpdateMemberForm
+from werkzeug.security import generate_password_hash, check_password_hash
+from library.models import Book, Member, Transaction, User
 from datetime import datetime, timedelta, date
 from sqlalchemy import or_
 
@@ -16,6 +16,10 @@ members_bp = Blueprint('members_bp', __name__)
 # Renders member page
 @members_bp.route('/members', methods=['GET', 'POST'])
 def members_page():
+    admin_form = AdminCreateMemberForm()
+    member_form_instance = member_form()
+    admin_password_form = AdminChangePasswordForm()
+    update_member_form = UpdateMemberForm()
     # Query members once
     members = Member.query.filter(
         Member.membership_status != 'cancelled'
@@ -29,7 +33,6 @@ def members_page():
         ).with_entities(db.func.sum(Transaction.amount)).scalar() or 0.0
         member.total_paid = total_paid
 
-    form_member = member_form()
     books_to_borrow = Book.query.filter(Book.borrow_stock > 0).all()
     members_can_borrow = Member.query.filter(
         Member.membership_status == 'active',
@@ -55,42 +58,60 @@ def members_page():
     books_to_return = Book.query.filter(Book.id.in_(all_borrowed_book_ids)).all()
     books_for_sale = Book.query.filter(Book.stock > 0).all()
 
-    if form_member.validate_on_submit():
+    if admin_form.validate_on_submit():
+        hashed_password = generate_password_hash(admin_form.password.data)
+        new_user = User(
+            name=admin_form.name.data,
+            phone=admin_form.phone.data,
+            email=admin_form.email.data,
+            password=hashed_password,
+            address=admin_form.address.data,
+            role='customer'
+        )
+        db.session.add(new_user)
+        db.session.flush()  # Get new_user.id before commit
+
+        # Create Member linked to User
         start_date = datetime.utcnow()
-        expiry_date = start_date + timedelta(days=30 * form_member.membership_months.data)
-        member_to_create = Member(
-            name=form_member.name.data,
-            phone_number=form_member.phone_number.data,
-            member_name=form_member.member_name.data,
+        expiry_date = start_date + timedelta(days=30 * admin_form.membership_months.data)
+        new_member = Member(
+            name=admin_form.name.data,
+            phone_number=admin_form.phone.data,
+            member_name=admin_form.member_name.data,
             membership_status='active',
             membership_start=start_date,
             membership_expiry=expiry_date,
-            membership_fee=form_member.membership_fee.data
+            membership_fee=20.0,  # Default fee
+            user_id=new_user.id
         )
-        db.session.add(member_to_create)
-        db.session.commit()
+        db.session.add(new_member)
 
-        # Record initial membership fee transaction AFTER member is created
-        initial_fee = form_member.membership_fee.data * form_member.membership_months.data
+        # Record transaction
         transaction = Transaction(
-            member_name=member_to_create.member_name,
+            book_name="Membership Fee",
+            member_name=new_member.member_name,
             type_of_transaction="membership",
-            amount=initial_fee,
+            amount=admin_form.membership_months.data * 20.0,
             date=date.today(),
-            member_id=member_to_create.id
+            member_id=new_member.id,
+            user_id=new_user.id
         )
         db.session.add(transaction)
+
         db.session.commit()
+        flash('Member created successfully!', 'success')
+        return redirect(url_for('members_bp.members_page'))
 
-        flash('Successfully created a member', category="success")
-        return redirect(request.referrer)
-
-    if form_member.errors != {}:
-        for err_msg in form_member.errors.values():
-            flash(f'Error creating member: {err_msg}', category='danger')
+    if admin_form.errors:
+        for err_msgs in admin_form.errors.values():
+            for err_msg in err_msgs:
+                flash(f'Error creating member: {err_msg}', category='danger')
 
     return render_template('members/members.html',
-                           member_form=form_member,
+                           admin_form=AdminCreateMemberForm(),
+                           update_member_form=update_member_form,
+                           admin_password_form=admin_password_form,
+                           member_form=member_form_instance,
                            members=members,
                            length=len(members),
                            books_to_borrow=books_to_borrow,
@@ -100,43 +121,43 @@ def members_page():
                            current_date=datetime.utcnow().date())
 
 
-# deletes a member
-@members_bp.route('/delete-member/<member_id>', methods=['POST'])
-def delete_member(member_id):
-    try:
-        # reads requested member from db
-        member = Member.query.filter_by(id=member_id).first()
-        db.session.delete(member)
-        db.session.commit()
-        flash("Deleted Successfully", category="success")
-
-    except:
-        flash("Error in deletion", category="danger")
-
-    return redirect(url_for('routes_bp.home_page'))
-
-
 # updates a member
+# member_routes.py
 @members_bp.route('/update-member/<member_id>', methods=['GET', 'POST'])
 def update_member(member_id):
-    # reads requested member from db
     member = Member.query.filter_by(id=member_id).first()
+    user = User.query.get(member.user_id)
+
     newName = request.form.get("name")
     newNumber = request.form.get("phone_number")
     newMember = request.form.get("member_name")
+    newEmail = request.form.get("email")
 
     try:
-        if member.name is not newName:
+        # Validate email uniqueness
+        if newEmail != user.email:
+            existing_user = User.query.filter(User.email == newEmail, User.id != user.id).first()
+            if existing_user:
+                flash("Email already in use by another user", category="danger")
+                return redirect(url_for('members_bp.members_page'))
+
+        # Update member fields
+        if member.name != newName:
             member.name = newName
-        if member.phone_number is not newNumber:
+        if member.phone_number != newNumber:
             member.phone_number = newNumber
-        if member.member_name is not newMember:
+        if member.member_name != newMember:
             member.member_name = newMember
+
+        # Update user email
+        if user.email != newEmail:
+            user.email = newEmail
+
         db.session.commit()
         flash("Updated Successfully!", category="success")
 
-    except:
-        flash("Failed to update", category="danger")
+    except Exception as e:
+        flash(f"Failed to update: {str(e)}", category="danger")
 
     return redirect(url_for('members_bp.members_page'))
 
@@ -230,4 +251,36 @@ def cancel_membership(member_id):
     db.session.commit()
 
     flash(f"Membership cancelled. Refunded ${refund:.2f}", category='success')
+    return redirect(url_for('members_bp.members_page'))
+
+
+@members_bp.route('/update-member-password/<int:member_id>', methods=['POST'])
+def update_member_password(member_id):
+    member = Member.query.get(member_id)
+    if not member:
+        flash("Member not found", category="danger")
+        return redirect(url_for('members_bp.members_page'))
+
+    form = AdminChangePasswordForm()
+    if form.validate_on_submit():
+        user = User.query.get(member.user_id)
+        if user:
+            # Additional validation
+            if len(form.new_password.data) < 8:
+                flash("Password must be at least 8 characters", category="danger")
+                return redirect(url_for('members_bp.members_page'))
+
+            if not any(char in '!@#$%^&*(),.?":{}|<>' for char in form.new_password.data):
+                flash("Password must contain at least one special character", category="danger")
+                return redirect(url_for('members_bp.members_page'))
+
+            user.password = generate_password_hash(form.new_password.data)
+            db.session.commit()
+            flash("Password updated successfully!", category="success")
+        else:
+            flash("User account not found", category="danger")
+    else:
+        for error in form.errors.values():
+            flash(f"Error: {error[0]}", category="danger")
+
     return redirect(url_for('members_bp.members_page'))

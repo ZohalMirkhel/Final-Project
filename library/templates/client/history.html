@@ -4,6 +4,43 @@
 {% block content %}
 <h2>My History</h2>
 
+<!-- Books to be Returned Section -->
+<div class="card mb-4">
+    <div class="card-header bg-warning">
+        <h4>Books to be Returned</h4>
+    </div>
+    <div class="card-body">
+        {% if pending_returns %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Book Title</th>
+                        <th>Request Date</th>
+                        <th>Scheduled Pickup</th>
+                        <th>Pickup Fee</th>
+                        <th>Late Fees</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for request in pending_returns %}
+                    <tr>
+                        <td>{{ request.book.title }}</td>
+                        <td>{{ request.request_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ request.pickup_date.strftime('%Y-%m-%d') }}</td>
+                        <td>${{ request.pickup_fee }}</td>
+                        <td>${{ request.late_fee }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>No pending return requests</p>
+        {% endif %}
+    </div>
+</div>
+
 <!-- Borrowed Books Section -->
 {% if checkouts %}
 <h3>Borrowed Books</h3>
@@ -36,7 +73,7 @@
 </ul>
 {% endif %}
 
-{% if not checkouts and not purchases %}
+{% if not checkouts and not purchases and not pending_returns %}
 <p>No history found.</p>
 {% endif %}
 {% endblock %}

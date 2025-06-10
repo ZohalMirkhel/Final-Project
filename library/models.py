@@ -13,8 +13,9 @@ class Member(UserMixin, db.Model):
     cancellation_date = db.Column(db.DateTime, nullable=True)
     refund_amount = db.Column(db.Float, default=0.0)
     membership_start = db.Column(db.DateTime, default=datetime.utcnow)
-    membership_fee = db.Column(db.Float, default=20.0)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', back_populates='member', foreign_keys=[user_id])
+    membership_fee = db.Column(db.Float, default=20.0)
     borrowed = db.relationship('Book', secondary='book_borrow',
                                backref='current_borrowers', lazy='dynamic',
                                overlaps="borrows,borrow_records")
@@ -61,7 +62,6 @@ class Book_borrowed(db.Model):
     borrowed_date = db.Column(db.DateTime, default=datetime.utcnow)
     due_date = db.Column(db.DateTime)
     return_date = db.Column(db.DateTime, nullable=True)
-    # Add these relationships
     member = db.relationship('Member', backref='admin_borrows',
                              overlaps="borrowed,current_borrowers,borrow_records")
     book = db.relationship('Book', back_populates='borrow_records',
@@ -72,7 +72,7 @@ class Transaction(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     book_name = db.Column(db.String(100), nullable=False, default='')
     member_name = db.Column(db.String())
-    type_of_transaction = db.Column(db.String(length=7), nullable=False)
+    type_of_transaction = db.Column(db.String(length=30), nullable=False)
     date = db.Column(db.Date())
     amount = db.Column(db.Float, default=0.0)
     book_id = db.Column(db.Integer, db.ForeignKey('book.id'))
@@ -118,8 +118,6 @@ class Cart(db.Model):
     user = db.relationship('User', backref='cart_items')
     book = db.relationship('Book', backref='cart_items')
 
-
-# Add to models.py
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -128,8 +126,8 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(100), nullable=False)
     address = db.Column(db.String(200), nullable=False)
     role = db.Column(db.String(20), nullable=False)
-    member = db.relationship('Member', backref='user', uselist=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    member = db.relationship('Member', back_populates='user', uselist=False, foreign_keys=[Member.user_id])
 
     def is_member(self):
         return False
@@ -148,3 +146,18 @@ class User(UserMixin, db.Model):
 
     def is_anonymous(self):
         return False
+
+
+class ReturnRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    member_id = db.Column(db.Integer, db.ForeignKey('member.id'))
+    book_id = db.Column(db.Integer, db.ForeignKey('book.id'))
+    checkout_id = db.Column(db.Integer, db.ForeignKey('checkout.id'))
+    request_date = db.Column(db.DateTime, default=datetime.utcnow)
+    pickup_date = db.Column(db.DateTime)
+    is_completed = db.Column(db.Boolean, default=False)
+    late_fee = db.Column(db.Float, default=0.0)
+    pickup_fee = db.Column(db.Float, default=5.0)
+    member = db.relationship('Member', backref='return_requests')
+    book = db.relationship('Book', backref='return_requests')
+    checkout = db.relationship('Checkout', backref='return_request')
