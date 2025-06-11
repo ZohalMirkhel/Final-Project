@@ -1,36 +1,234 @@
 {% extends 'base_client.html' %}
 
+{% block style %}
+<style>
+  :root {
+    --primary: #A85605;
+    --primary-hover: #8a4404;
+    --secondary: #0F4D4D;
+    --text-dark: #333333;
+    --text-muted: #6c757d;
+    --light-bg: #F5F5F5;
+    --border: #dee2e6;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  body {
+    background-color: #fff;
+    color: var(--text-dark);
+    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    line-height: 1.6;
+  }
+
+  h2 {
+    color: var(--primary);
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    position: relative;
+    padding-bottom: 0.75rem;
+    font-size: 1.75rem;
+  }
+
+  h2::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    border-radius: 3px;
+  }
+
+  h3 {
+    color: var(--secondary);
+    font-weight: 500;
+    margin: 2rem 0 1.25rem;
+    font-size: 1.3rem;
+  }
+
+  .book-section {
+    margin-bottom: 3rem;
+  }
+
+  .book-card {
+    border: none;
+    border-radius: 8px;
+    background-color: #fff;
+    box-shadow: var(--shadow-sm);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .book-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .book-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .book-item {
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .book-item:last-child {
+    border-bottom: none;
+  }
+
+  .book-info {
+    flex-grow: 1;
+  }
+
+  .book-title {
+    font-weight: 500;
+    color: var(--secondary);
+    margin-bottom: 0.25rem;
+    font-size: 1.1rem;
+  }
+
+  .book-meta {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+  }
+
+  .book-meta-icon {
+    margin-right: 0.5rem;
+    opacity: 0.7;
+  }
+
+  .book-actions {
+    margin-left: 1rem;
+  }
+
+  .btn-return {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+
+  .btn-return:hover {
+    background-color: var(--primary-hover);
+    text-decoration: none;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-muted);
+    background-color: var(--light-bg);
+    border-radius: 8px;
+  }
+
+  .empty-state-icon {
+    font-size: 2.5rem;
+    color: var(--border);
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+
+  .empty-state-text {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .empty-state-subtext {
+    font-size: 0.9rem;
+    opacity: 0.8;
+  }
+
+  @media (max-width: 768px) {
+    .book-item {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .book-actions {
+      margin-left: 0;
+      margin-top: 1rem;
+      align-self: flex-end;
+    }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<h2>My Books</h2>
+<div class="container">
+  <h2>My Books</h2>
 
-<h3>Purchased Books</h3>
-{% if purchased %}
-<ul>
-  {% for purchase in purchased %}
-    {% set book = purchase.book if purchase.book else purchase %}
-    <li>
-      {{ book.title if book else purchase.book_name }}
-      (Purchased on {{ purchase.date.strftime('%Y-%m-%d') }})
-    </li>
-  {% endfor %}
-</ul>
-{% else %}
-<p>No purchased books</p>
-{% endif %}
+  <!-- Purchased Books Section -->
+  <div class="book-section">
+    <h3>Purchased Books</h3>
+    {% if purchased %}
+      <div class="book-card">
+        <ul class="book-list">
+          {% for purchase in purchased %}
+            {% set book = purchase.book if purchase.book else purchase %}
+            <li class="book-item">
+              <div class="book-info">
+                <div class="book-title">
+                  {{ book.title if book else purchase.book_name }}
+                </div>
+                <div class="book-meta">
+                  <span class="book-meta-icon">📅</span>
+                  Purchased on {{ purchase.date.strftime('%B %d, %Y') }}
+                </div>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-state-icon">🛒</div>
+        <p class="empty-state-text">No purchased books yet</p>
+        <p class="empty-state-subtext">Your purchased books will appear here</p>
+      </div>
+    {% endif %}
+  </div>
 
-<!-- Borrowed Books Section -->
-<h3>Borrowed Books</h3>
-{% if current_borrowed %}
-<ul>
-  {% for checkout, book in current_borrowed %}
-  <li>
-    {{ book.title }}
-    (Due: {{ checkout.due_date.strftime('%Y-%m-%d') if checkout.due_date else 'N/A' }})
-    <a href="{{ url_for('client.return_book', book_id=book.id) }}">Return</a>
-  </li>
-  {% endfor %}
-</ul>
-{% else %}
-<p>No borrowed books</p>
-{% endif %}
+  <!-- Borrowed Books Section -->
+  <div class="book-section">
+    <h3>Borrowed Books</h3>
+    {% if current_borrowed %}
+      <div class="book-card">
+        <ul class="book-list">
+          {% for checkout, book in current_borrowed %}
+            <li class="book-item">
+              <div class="book-info">
+                <div class="book-title">{{ book.title }}</div>
+                <div class="book-meta">
+                  <span class="book-meta-icon">⏳</span>
+                  Due: {{ checkout.due_date.strftime('%B %d, %Y') if checkout.due_date else 'No due date set' }}
+                </div>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-state-icon">📚</div>
+        <p class="empty-state-text">No books currently borrowed</p>
+        <p class="empty-state-subtext">Borrow books to see them listed here</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
 {% endblock %}

@@ -2,137 +2,314 @@
 
 {% block title %}Profile{% endblock %}
 
+{% block style %}
+<style>
+  :root {
+    --primary: #A85605;
+    --primary-hover: #8a4404;
+    --secondary: #0F4D4D;
+    --danger: #dc3545;
+    --warning: #ffc107;
+    --text-dark: #333333;
+    --text-muted: #6c757d;
+    --light-bg: #F5F5F5;
+    --border: #dee2e6;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  body {
+    background-color: #f8f9fa;
+    color: var(--text-dark);
+    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  }
+
+  .profile-container {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+
+  h1 {
+    color: var(--primary);
+    font-weight: 600;
+    margin-bottom: 2rem;
+    position: relative;
+    padding-bottom: 0.75rem;
+  }
+
+  h1::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    border-radius: 3px;
+  }
+
+  h2 {
+    font-weight: 500;
+    font-size: 1.4rem;
+    margin: 0;
+  }
+
+  .card {
+    border: none;
+    border-radius: 8px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 2rem;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .card-header {
+    padding: 1rem 1.5rem;
+    background-color: var(--secondary);
+    color: white;
+    border-bottom: none;
+  }
+
+  .card-body {
+    padding: 1.5rem;
+  }
+
+  .form-label {
+    font-weight: 500;
+    color: var(--secondary);
+    margin-bottom: 0.5rem;
+  }
+
+  .form-control {
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.25rem rgba(168, 86, 5, 0.25);
+  }
+
+  .btn-primary {
+    background-color: var(--primary);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+  }
+
+  .btn-primary:hover {
+    background-color: var(--primary-hover);
+  }
+
+  .btn-danger {
+    background-color: var(--danger);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+  }
+
+  .btn-warning {
+    background-color: var(--warning);
+    color: var(--text-dark);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+  }
+
+  .btn-outline {
+    border: 1px solid var(--border);
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .btn-outline:hover {
+    background-color: var(--light-bg);
+  }
+
+  .account-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .alert-warning {
+    background-color: rgba(255, 193, 7, 0.15);
+    border-left: 4px solid var(--warning);
+    border-radius: 0;
+  }
+
+  .modal-header {
+    background-color: var(--danger);
+    color: white;
+    border-bottom: none;
+  }
+
+  .modal-footer {
+    border-top: none;
+    padding: 1rem 1.5rem;
+  }
+
+  .readonly-field {
+    background-color: var(--light-bg);
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 768px) {
+    .account-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .account-actions .btn {
+      width: 100%;
+      margin-bottom: 0.5rem;
+    }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container my-5">
-    <h1 class="mb-4">Your Profile</h1>
-    
-    <!-- Profile Information -->
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h2>Personal Information</h2>
-        </div>
-        <div class="card-body">
-            <form method="POST" action="{{ url_for('client.profile') }}">
-                {{ form.hidden_tag() }}
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Full Name</label>
-                        {{ form.name(class="form-control", value=current_user.name) }}
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Email</label>
-                        {{ form.email(class="form-control", value=current_user.email) }}
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Phone Number</label>
-                        {{ form.phone(class="form-control", value=current_user.phone) }}
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Address</label>
-                        {{ form.address(class="form-control", value=current_user.address) }}
-                    </div>
-                </div>
-                
-                <!-- Replace the member name display section with this -->
-{% if member %}
-<div class="row mb-3">
-    <div class="col-md-6">
-        <label class="form-label">Username</label>
-        {{ form.member_name(class="form-control") }}
-    </div>
-    <div class="col-md-6">
-        <label class="form-label">Membership Status</label>
-        <input type="text" class="form-control"
-            value="{% if member.is_active_member() %}Active until {{ member.membership_expiry.strftime('%Y-%m-%d') }}{% else %}Inactive{% endif %}"
-            readonly>
-    </div>
-</div>
-{% endif %}
-                {% if member %}
-<div class="col-md-6">
-    <label class="form-label">Membership Fee Per Month</label>
-    <input type="text" class="form-control"
-        value="${{ '%.2f' | format(membership_fee) }}"
-        readonly>
-</div>
-{% endif %}
-                <button type="submit" class="btn btn-primary mt-3">Update Profile</button>
-            </form>
-        </div>
-    </div>
-    
-    <!-- Account Actions -->
-    <div class="card">
-        <div class="card-header bg-danger text-white">
-            <h2>Account Actions</h2>
-        </div>
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-                <button class="btn btn-outline-dark" onclick="location.href='{{ url_for('login_bp.client_logout') }}'">
-                    Logout
-                </button>
-                
-                <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
-                    Delete Account
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-<!-- Add after Account Actions card -->
-<div class="card mt-4">
-    <div class="card-header bg-warning text-dark">
-        <h2>Change Password</h2>
+<div class="profile-container">
+  <h1>Your Profile</h1>
+
+  <!-- Profile Information -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Personal Information</h2>
     </div>
     <div class="card-body">
-        <form method="POST" action="{{ url_for('client.change_password') }}">
-            {{ password_form.hidden_tag() }}
-            <div class="mb-3">
-                {{ password_form.current_password.label(class="form-label") }}
-                {{ password_form.current_password(class="form-control") }}
-            </div>
-            <div class="mb-3">
-                {{ password_form.new_password.label(class="form-label") }}
-                {{ password_form.new_password(class="form-control") }}
-            </div>
-            <div class="mb-3">
-                {{ password_form.confirm_password.label(class="form-label") }}
-                {{ password_form.confirm_password(class="form-control") }}
-            </div>
-            <button type="submit" class="btn btn-warning">Change Password</button>
-        </form>
+      <form method="POST" action="{{ url_for('client.profile') }}">
+        {{ form.hidden_tag() }}
+
+        <div class="row mb-3">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Full Name</label>
+            {{ form.name(class="form-control", value=current_user.name) }}
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Email</label>
+            {{ form.email(class="form-control", value=current_user.email) }}
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Phone Number</label>
+            {{ form.phone(class="form-control", value=current_user.phone) }}
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Address</label>
+            {{ form.address(class="form-control", value=current_user.address) }}
+          </div>
+        </div>
+
+        {% if member %}
+        <div class="row mb-3">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Username</label>
+            {{ form.member_name(class="form-control") }}
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Membership Status</label>
+            <input type="text" class="form-control readonly-field"
+              value="{% if member.is_active_member() %}Active until {{ member.membership_expiry.strftime('%B %d, %Y') }}{% else %}Inactive{% endif %}"
+              readonly>
+          </div>
+        </div>
+        <div class="row mb-3">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Membership Fee Per Month</label>
+            <input type="text" class="form-control readonly-field"
+              value="${{ '%.2f' | format(membership_fee) }}"
+              readonly>
+          </div>
+        </div>
+        {% endif %}
+
+        <button type="submit" class="btn btn-primary mt-2">Update Profile</button>
+      </form>
     </div>
+  </div>
+
+  <!-- Change Password -->
+  <div class="card">
+    <div class="card-header" style="background-color: var(--primary);">
+      <h2>Change Password</h2>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('client.change_password') }}">
+        {{ password_form.hidden_tag() }}
+        <div class="mb-3">
+          {{ password_form.current_password.label(class="form-label") }}
+          {{ password_form.current_password(class="form-control") }}
+        </div>
+        <div class="mb-3">
+          {{ password_form.new_password.label(class="form-label") }}
+          {{ password_form.new_password(class="form-control") }}
+        </div>
+        <div class="mb-3">
+          {{ password_form.confirm_password.label(class="form-label") }}
+          {{ password_form.confirm_password(class="form-control") }}
+        </div>
+        <button type="submit" class="btn btn-primary">Change Password</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Account Actions -->
+  <div class="card">
+    <div class="card-header" style="background-color: var(--danger);">
+      <h2>Account Actions</h2>
+    </div>
+    <div class="card-body">
+      <div class="account-actions">
+        <button class="btn btn-outline" onclick="location.href='{{ url_for('login_bp.client_logout') }}'">
+          Logout
+        </button>
+        <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+          Delete Account
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Delete Account Modal -->
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title">Confirm Account Deletion</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p class="lead">Are you sure you want to permanently delete your account?</p>
-                {% if member and member.is_active_member() %}
-                <div class="alert alert-warning">
-                    <strong>Note:</strong> Your active membership will be canceled and you'll receive a refund of 
-                    $<span id="refundAmount">{{ refund_amount|round(2) }}</span> for unused time.
-                </div>
-                {% endif %}
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form action="{{ url_for('client.delete_account') }}" method="POST">
-                    {{ form.hidden_tag() }}
-                    <button type="submit" class="btn btn-danger">Delete Account Permanently</button>
-                </form>
-            </div>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirm Account Deletion</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="lead">Are you sure you want to permanently delete your account?</p>
+        {% if member and member.is_active_member() %}
+        <div class="alert alert-warning">
+          <strong>Note:</strong> Your active membership will be canceled and you'll receive a refund of
+          $<span id="refundAmount">{{ refund_amount|round(2) }}</span> for unused time.
         </div>
+        {% endif %}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-bs-dismiss="modal">Cancel</button>
+        <form action="{{ url_for('client.delete_account') }}" method="POST">
+          {{ form.hidden_tag() }}
+          <button type="submit" class="btn btn-danger">Delete Account Permanently</button>
+        </form>
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}

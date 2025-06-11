@@ -6,348 +6,434 @@
 
 {% block style %}
 <style>
-    .hero-section {
-        background: linear-gradient(to right, #f8f9fa, #e9ecef);
-        padding: 4rem 2rem;
-        text-align: center;
-        margin-bottom: 2rem;
-        border-radius: 1rem;
-        box-shadow: 0 6px 12px rgba(0,0,0,0.08);
-    }
+  :root {
+    --primary: #A85605;
+    --primary-hover: #8a4404;
+    --secondary: #0F4D4D;
+    --text-dark: #333;
+    --text-light: #555;
+    --light-bg: #f8f9fa;
+    --border: #dee2e6;
+    --danger: #dc3545;
+    --info: #0dcaf0;
+    --success: #198754;
+  }
 
-    .hero-section h1 {
-        font-weight: 700;
-        font-size: 2.5rem;
-    }
+  .btn-cancel, .btn-renew {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
 
-    .action-buttons {
-        display: flex;
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: 1.5rem;
-        margin-top: 2rem;
-    }
+.btn-cancel:hover, .btn-renew:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-2px);
+}
 
-    .btn-action {
-        min-width: 220px;
-        padding: 1.25rem;
-        font-size: 1rem;
-        border-radius: 1rem;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
+  .btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 0.5rem 1.5rem;
+    border-radius: 0.375rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+  }
 
-    .btn-action:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 14px rgba(0,0,0,0.12);
-    }
+  .btn-secondary:hover {
+    background-color: #5a6268;
+    transform: translateY(-2px);
+  }
 
-    .btn-icon {
-        font-size: 2rem;
-        margin-bottom: 0.5rem;
-    }
+  body {
+    background-color: #fff;
+    color: var(--text-dark);
+  }
 
-    .card {
-        border: none;
-        border-radius: 1rem;
-        box-shadow: 0 6px 10px rgba(0,0,0,0.05);
-    }
+  .hero-section {
+    background: #fff;
+    border: 1px solid var(--border);
+    padding: 3rem 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
+    text-align: center;
+  }
 
-    .card-header {
-        border-top-left-radius: 1rem;
-        border-top-right-radius: 1rem;
-    }
+  .hero-section h1 {
+    font-weight: 600;
+    font-size: 2.25rem;
+    color: var(--primary);
+  }
 
-    .list-group-item {
-        border: none;
-        background-color: #f8f9fa;
-        margin-bottom: 0.5rem;
-        border-radius: 0.5rem;
-    }
+  .hero-section p {
+    color: var(--text-light);
+    font-size: 1.1rem;
+    margin-top: 0.5rem;
+  }
 
-    .modal-content {
-        border-radius: 1rem;
-        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-    }
+  .action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
 
-    .modal-header {
-        background-color: #f1f3f5;
-        border-bottom: 1px solid #dee2e6;
-        border-top-left-radius: 1rem;
-        border-top-right-radius: 1rem;
-    }
+  .btn-action {
+    background-color: var(--primary);
+    color: #fff;
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+    border-radius: 0.75rem;
+    border: none;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: all 0.2s ease;
+  }
 
-    .modal-footer {
-        border-top: 1px solid #dee2e6;
-    }
+  .btn-action:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+  }
 
-    .badge {
-        font-size: 0.9rem;
-        padding: 0.5em 0.75em;
-        border-radius: 0.5rem;
-    }
+  .btn-icon {
+    font-size: 1.75rem;
+    margin-bottom: 0.25rem;
+  }
 
-    .bg-info {
-        background-color: #0dcaf0 !important;
-    }
+  .card {
+    background-color: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border);
+  }
 
-    .bg-danger {
-        background-color: #dc3545 !important;
-    }
+  .card-header {
+    background-color: var(--secondary);
+    color: #fff;
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
+    font-weight: 600;
+    padding: 1rem 1.25rem;
+  }
 
-    .bg-success {
-        background-color: #198754 !important;
-    }
+  .card-body {
+    padding: 1.25rem;
+  }
 
-    .bg-secondary {
-        background-color: #6c757d !important;
-    }
+  .list-group-item {
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--light-bg);
+  }
+
+  .modal-content {
+    border-radius: 1rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  }
+
+  .modal-header {
+    border-bottom: 1px solid var(--border);
+    background: var(--light-bg);
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
+  }
+
+  .modal-footer {
+    border-top: 1px solid var(--border);
+  }
+
+  .badge {
+    font-size: 0.85rem;
+    padding: 0.4em 0.7em;
+    border-radius: 0.5rem;
+  }
+
+  .bg-info {
+    background-color: var(--info) !important;
+  }
+
+  .bg-danger {
+    background-color: var(--danger) !important;
+  }
+
+  .bg-success {
+    background-color: var(--success) !important;
+  }
+
+  .bg-secondary {
+    background-color: var(--secondary) !important;
+  }
+
+  .btn-outline-primary {
+    color: var(--primary);
+    border: 1px solid var(--primary);
+    background: transparent;
+  }
+
+  .btn-outline-primary:hover {
+    background: var(--primary);
+    color: white;
+  }
+
+  .btn-outline-danger {
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    background: transparent;
+  }
+
+  .btn-outline-danger:hover {
+    background: var(--danger);
+    color: white;
+  }
+  .section-padding-top {
+  padding-top: 2rem;
+  }
 </style>
 {% endblock %}
 
 {% block content %}
+
+<!-- Modals -->
 <!-- Membership Modal -->
-<div class="modal fade" id="membershipModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Manage Membership</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<div class="modal fade" id="membershipModal" tabindex="-1" aria-labelledby="membershipModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border: none; border-radius: 10px; overflow: hidden;">
+      <div class="modal-header" style="background-color: var(--secondary); color: white; border-bottom: 3px solid var(--primary);">
+        <h5 class="modal-title" id="membershipModalLabel" style="font-weight: 600;">
+          {% if membership_active %}Manage Membership{% else %}Buy Membership{% endif %}
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body" style="padding: 2rem;">
+        {% if member and membership_active %}
+          <div style="margin-bottom: 1rem; padding: 1rem; background: var(--light-bg); border-radius: 0.75rem; border: 1px solid var(--border);">
+            <p><strong>Active Membership:</strong> Expires on {{ member.membership_expiry.strftime('%b %d, %Y') }}</p>
+          </div>
+        {% else %}
+          <p>No active membership currently.</p>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('client.buy_membership') }}">
+          {{ membership_form.hidden_tag() }}
+
+          <div class="mb-3">
+            <label for="months" class="form-label" style="color: var(--secondary); font-weight: 600;">Membership Duration</label>
+            {{ membership_form.months(class="form-select", id="months") }}
+          </div>
+
+          <h6 style="color: var(--secondary); font-weight: 600; margin-top: 2rem; margin-bottom: 1rem;">Payment Details</h6>
+
+          <div class="mb-3">
+            <label for="cardholder_name" class="form-label" style="color: var(--secondary); font-weight: 600;">Cardholder Name</label>
+            <input type="text" class="form-control" id="cardholder_name" name="cardholder_name" placeholder="Full Name on Card" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="card_number" class="form-label" style="color: var(--secondary); font-weight: 600;">Card Number</label>
+            <input type="text" class="form-control" id="card_number" name="card_number" placeholder="1234 5678 9012 3456" required minlength="15" maxlength="16">
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="expiry_date" class="form-label" style="color: var(--secondary); font-weight: 600;">Expiry (MM/YY)</label>
+              <input type="text" class="form-control" id="expiry_date" name="expiry_date" placeholder="MM/YY" required pattern="(0[1-9]|1[0-2])\/([0-9]{2})">
             </div>
-            <div class="modal-body">
-  {% if member and membership_active %}
-    <!-- Show active membership details -->
-  {% else %}
-    <p>No active membership</p>
-  {% endif %}
+            <div class="col-md-6">
+              <label for="cvv" class="form-label" style="color: var(--secondary); font-weight: 600;">CVV</label>
+              <input type="text" class="form-control" id="cvv" name="cvv" placeholder="123" required minlength="3" maxlength="4">
+            </div>
+          </div>
 
-  <form method="POST" action="{{ url_for('client.buy_membership') }}">
-    {{ membership_form.hidden_tag() }}
-    <div class="mb-3">
-      <label class="form-label">Membership Options</label>
-      {{ membership_form.months(class="form-select") }}
-    </div>
+          <div class="mb-3">
+            <label for="billing_address" class="form-label" style="color: var(--secondary); font-weight: 600;">Billing Address</label>
+            <input type="text" class="form-control" id="billing_address" name="billing_address" placeholder="Billing Address">
+          </div>
 
-    <!-- Payment Form -->
-    <div class="mb-3">
-      <h5>Payment Details</h5>
-      <div class="mb-3">
-        <label class="form-label">Cardholder Name</label>
-        <input type="text" class="form-control" name="cardholder_name" required>
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Card Number</label>
-        <input type="text" class="form-control" name="card_number" required minlength="15" maxlength="16">
-      </div>
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <label class="form-label">Expiration Date (MM/YY)</label>
-          <input type="text" class="form-control" name="expiry_date" required pattern="(0[1-9]|1[0-2])\/?([0-9]{2})">
-        </div>
-        <div class="col-md-6">
-          <label class="form-label">CVV/CVC</label>
-          <input type="text" class="form-control" name="cvv" required minlength="3" maxlength="4">
-        </div>
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Billing Address (optional)</label>
-        <input type="text" class="form-control" name="billing_address">
+          <div class="modal-footer" style="border-top: 1px solid var(--border); padding-top: 1rem;">
+            {% if membership_active %}
+              <button type="button" class="btn btn-cancel" onclick="cancelMembership()">Cancel Membership</button>
+            {% endif %}
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-renew">
+              {% if membership_active %}Renew Membership{% else %}Buy Membership{% endif %}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
-
-    <div class="modal-footer">
-      {% if member and membership_active %}
-      <button type="button" class="btn btn-danger" onclick="cancelMembership()">Cancel Membership</button>
-      {% endif %}
-      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-      <button type="submit" class="btn btn-primary">Confirm Payment</button>
-    </div>
-  </form>
-</div>
-        </div>
-    </div>
+  </div>
 </div>
 
-<!-- Return Book Modal -->
 <div class="modal fade" id="returnBookModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Return Book</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form method="POST" action="{{ url_for('client.return_book') }}">
-                    {{ return_form.hidden_tag() }}
-                    <div class="mb-3">
-                        <label class="form-label">Books to Return</label>
-                        <select class="form-select" name="book_id" required>
-                            {% for checkout, book in borrowed_books %}
-                            <option value="{{ book.id }}">
-                                {{ book.title }} (Due: {{ checkout.due_date.strftime('%Y-%m-%d') if checkout.return_date else 'N/A' }})
-                            </option>
-                            {% else %}
-                            <option disabled>No books to return</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="alert alert-info">
-                        Late returns may incur fees of $0.50 per day
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Return Book</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border: none; border-radius: 10px; overflow: hidden;">
+      <div class="modal-header" style="background-color: var(--secondary); color: white; border-bottom: 3px solid var(--primary);">
+        <h5 class="modal-title">Return Book</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="padding: 2rem;">
+        <form method="POST" action="{{ url_for('client.return_book') }}">
+          {{ return_form.hidden_tag() }}
+          <div class="mb-3">
+            <label class="form-label" style="color: var(--secondary); font-weight: 600;">Books to Return</label>
+            <select class="form-select" name="book_id" required>
+              {% for checkout, book in borrowed_books %}
+              <option value="{{ book.id }}">{{ book.title }} (Due: {{ checkout.due_date.strftime('%Y-%m-%d') }})</option>
+              {% else %}
+              <option disabled>No books to return</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="alert alert-info">
+            Late returns may incur a fee of $0.50 per day.
+          </div>
+          <div class="modal-footer" style="border-top: 1px solid var(--border); padding-top: 1rem;">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-renew">Return Book</button>
+          </div>
+        </form>
+      </div>
     </div>
+  </div>
 </div>
 
+<!-- Hero Section -->
 <div class="hero-section">
-    <h1 class="display-5 fw-bold">Welcome to Your Library Dashboard</h1>
-    <p class="lead">Manage your books, membership, and reading activities</p>
+  <h1>Welcome to Your Library Dashboard</h1>
+  <p>Manage your books, membership, and reading activity</p>
 
-    <div class="action-buttons">
-        <button type="button" class="btn btn-primary btn-action" data-bs-toggle="modal" data-bs-target="#membershipModal">
-            <span class="btn-icon">👑</span>
-            {% if membership_active %}Renew Membership{% else %}Buy Membership{% endif %}
-        </button>
+  <div class="action-buttons">
+    <button class="btn btn-primary btn-action" data-bs-toggle="modal" data-bs-target="#membershipModal">
+      <span class="btn-icon">👑</span>
+      {% if membership_active %}Renew Membership{% else %}Buy Membership{% endif %}
+    </button>
 
-        <a href="{{ url_for('client.catalog') }}" class="btn btn-success btn-action">
-            <span class="btn-icon">💰</span>
-            Buy Books
-        </a>
+    <a href="{{ url_for('client.catalog') }}" class="btn btn-success btn-action">
+      <span class="btn-icon">💰</span> Buy Books
+    </a>
+
+    {% if membership_active %}
+    <a href="{{ url_for('client.catalog') }}" class="btn btn-info btn-action">
+      <span class="btn-icon">📚</span> Borrow Books
+    </a>
+    {% endif %}
+
+    {% if borrowed_books %}
+    <button class="btn btn-warning btn-action" data-bs-toggle="modal" data-bs-target="#returnBookModal">
+      <span class="btn-icon">⏱️</span> Return Books
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Current Books & Membership Status -->
+<div class="row pt-4">
+  <!-- My Current Books -->
+  <div class="col-md-6 mb-4">
+    <div class="card custom-section">
+      <div class="card-header">
+        <h5 class="mb-0">📚 My Current Books</h5>
+      </div>
+      <div class="card-body">
+        {% if borrowed_books %}
+        <ul class="list-group list-unstyled">
+          {% for checkout, book in borrowed_books %}
+          <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div>
+              <strong>{{ book.title }}</strong><br>
+              <small class="text-muted">Due: {{ checkout.due_date.strftime('%Y-%m-%d') if checkout.due_date else 'N/A' }}</small>
+            </div>
+            <span class="badge {% if checkout.due_date and datetime.utcnow() > checkout.due_date %}bg-danger{% else %}bg-info{% endif %}">
+              {% if checkout.due_date and datetime.utcnow() > checkout.due_date %}Overdue{% else %}On Time{% endif %}
+            </span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted mb-0">You don’t have any borrowed books.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Membership Status -->
+  <div class="col-md-6 mb-4">
+    <div class="card custom-section">
+      <div class="card-header">
+        <h5 class="mb-0">👤 Membership Status</h5>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <strong>Status:</strong>
+          <span class="badge {% if membership_active %}bg-success{% else %}bg-secondary{% endif %}">
+            {% if membership_active %}Active{% else %}Inactive{% endif %}
+          </span>
+        </div>
 
         {% if membership_active %}
-        <a href="{{ url_for('client.catalog') }}" class="btn btn-info btn-action">
-            <span class="btn-icon">📚</span>
-            Borrow Books
-        </a>
+        <div class="mb-3">
+          <strong>Expires:</strong>
+          <span>{{ member.membership_expiry.strftime('%b %d, %Y') }}</span>
+        </div>
         {% endif %}
 
-        {% if borrowed_books %}
-        <button type="button" class="btn btn-warning btn-action" data-bs-toggle="modal" data-bs-target="#returnBookModal">
-            <span class="btn-icon">⏱️</span>
-            Return Books
-        </button>
-        {% endif %}
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-6">
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
-                <h5>My Current Books</h5>
-            </div>
-            <div class="card-body">
-                {% if borrowed_books %}
-                <ul class="list-group">
-                    {% for checkout, book in borrowed_books %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        {{ book.title }}
-                        <span class="badge {% if checkout.due_date and datetime.utcnow() > checkout.due_date %}bg-danger{% else %}bg-info{% endif %}">
-                            Due: {{ checkout.due_date.strftime('%Y-%m-%d') if checkout.due_date else 'N/A' }}
-                        </span>
-                    </li>
-                    {% endfor %}
-                </ul>
-                {% else %}
-                <p>You don't have any borrowed books</p>
-                {% endif %}
-            </div>
+        <div class="mb-3">
+          <strong>Borrowed Books:</strong>
+          {{ borrowed_count }} of {{ borrow_limit }} allowed
         </div>
-    </div>
 
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header {% if membership_active %}bg-success{% else %}bg-secondary{% endif %} text-white">
-                <h5>Membership Status</h5>
-            </div>
-            <!-- client_home.html -->
-<div class="card-body">
-    <div class="mb-3">
-        <strong>Status:</strong>
-        <span class="badge {% if membership_active %}bg-success{% else %}bg-secondary{% endif %}">
-            {% if membership_active %}Active{% else %}Inactive{% endif %}
-        </span>
-    </div>
-
-    {% if membership_active %}
-    <div class="mb-3">
-        <strong>Expires:</strong> {{ member.membership_expiry.strftime('%b %d, %Y') }}
-    </div>
-    {% endif %}
-
-    <div class="mb-3">
-        <strong>Borrowed Books:</strong> {{ borrowed_count }} of {{ borrow_limit }} allowed
-    </div>
-
-    <div class="mb-3">
-        <strong>Late Fees:</strong> ${{ late_fees|round(2) }}
-    </div>
-
-    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#membershipModal">
-        {% if membership_active %}Renew{% else %}Buy{% endif %} Membership
-    </button>
-
-    {% if membership_active %}
-    <button class="btn btn-outline-danger" onclick="cancelMembership()">
-        Cancel Membership
-    </button>
-    {% endif %}
-</div>
+        <div class="mb-4">
+          <strong>Late Fees:</strong>
+          ${{ late_fees|round(2) }}
         </div>
+
+        <div class="d-flex gap-2 flex-wrap">
+          <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#membershipModal">
+            {% if membership_active %}Renew{% else %}Buy{% endif %} Membership
+          </button>
+
+          {% if membership_active %}
+          <button class="btn btn-outline-danger" onclick="cancelMembership()">Cancel Membership</button>
+          {% endif %}
+        </div>
+      </div>
     </div>
+  </div>
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-        $.ajaxSetup({
-            beforeSend: function(xhr, settings) {
-                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
-                    xhr.setRequestHeader("X-CSRFToken", csrfToken);
-                }
-            }
-        });
-    });
+  function cancelMembership() {
+    if (confirm('Are you sure you want to cancel your membership?')) {
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = "{{ url_for('client.cancel_membership') }}";
 
-function cancelMembership() {
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+      const csrfToken = "{{ csrf_token() }}";
+      if (csrfToken) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'csrf_token';
+        input.value = csrfToken;
+        form.appendChild(input);
+      }
 
-    if (confirm("Are you sure you want to cancel your membership?")) {
-        fetch("{{ url_for('client.cancel_membership') }}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
-            }
-        })
-        .then(response => {
-            if (response.status === 404 || response.status === 400) {
-                return response.json().then(data => {
-                    throw new Error(data.message);
-                });
-            }
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-                location.reload();
-            } else {
-                alert("Error: " + data.message);
-            }
-        })
-        .catch(error => {
-            alert(error.message);
-        });
+      document.body.appendChild(form);
+      form.submit();
     }
-}
+  }
 </script>
+
 {% endblock %}

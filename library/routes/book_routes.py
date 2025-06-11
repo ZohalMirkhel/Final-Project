@@ -5,11 +5,11 @@ from library.models import Transaction
 from datetime import datetime
 from library.models import Book, Member, Book_borrowed, Checkout
 from library import db
-from library.forms import book_form, ReturnBookForm
+from library.forms import book_form, ReturnBookForm, EmptyForm
 
 book_bp = Blueprint('book_bp', __name__)
 
-# Renders book page
+
 @book_bp.route('/books', methods=['GET', 'POST'])
 def books_page():
     books = Book.query.order_by(Book.id).all()
@@ -79,13 +79,17 @@ def books_page():
 
 @book_bp.route('/delete-book/<int:book_id>', methods=['POST'])
 def delete_book(book_id):
-    book = Book.query.get_or_404(book_id)
-    try:
-        db.session.delete(book)
-        db.session.commit()
-        flash("Deleted successfully", category="success")
-    except Exception as e:
-        flash(f"Deletion error: {str(e)}", category="danger")
+    form = EmptyForm()  # Create an instance of your EmptyForm (which includes CSRF protection)
+    if form.validate_on_submit():  # This will validate the CSRF token
+        book = Book.query.get_or_404(book_id)
+        try:
+            db.session.delete(book)
+            db.session.commit()
+            flash("Deleted successfully", category="success")
+        except Exception as e:
+            flash(f"Deletion error: {str(e)}", category="danger")
+    else:
+        flash("Invalid request", category="danger")
     return redirect(url_for('book_bp.books_page'))
 
 

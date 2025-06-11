@@ -4,7 +4,6 @@ from flask import jsonify
 
 from library import db
 from library.models import Book, Member, Transaction, Book_borrowed, Checkout, ReturnRequest
-from sqlalchemy import or_
 
 transactions_bp = Blueprint('transactions_bp', __name__)
 
@@ -12,7 +11,7 @@ transactions_bp = Blueprint('transactions_bp', __name__)
 @transactions_bp.route('/transactions')
 def transactions_page():
     transaction = Transaction.query.options(
-        db.joinedload(Transaction.book)  # Eager load book relationship
+        db.joinedload(Transaction.book)
     ).all()
     books_to_borrow = Book.query.filter(Book.borrow_stock > 0).all()
     members_can_borrows = Member.query.filter(

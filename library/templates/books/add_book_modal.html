@@ -1,39 +1,55 @@
-<div class="modal fade" id="bookModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="bookModalLabel">Create Book</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body text-left">
-                <form action="/books" method="POST">
-                    <!-- Flask form for creating a book -->
-                    {{ book_form.hidden_tag() }}
+<div class="modal fade" id="bookModal" tabindex="-1" aria-labelledby="bookModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border: none; border-radius: 10px; overflow: hidden;">
+      <div class="modal-header" style="background-color: var(--secondary); color: white; border-bottom: 3px solid var(--primary);">
+        <h5 class="modal-title" id="bookModalLabel" style="font-weight: 600;">Create Book</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" style="padding: 2rem;">
+        <form action="/books" method="POST">
+          {{ book_form.hidden_tag() }}
 
-                    {{ book_form.title.label() }}
-                    {{ book_form.title(class="form-control", placeholder="Title") }}
+          <div class="mb-4">
+            {{ book_form.title.label(class="form-label", style="color: var(--secondary); font-weight: 600;") }}
+            {{ book_form.title(class="form-control", placeholder="Title") }}
+          </div>
 
-                    {{ book_form.isbn.label() }}
-                    {{ book_form.isbn(class="form-control", placeholder="ISBN") }}
+          <div class="mb-4">
+            {{ book_form.isbn.label(class="form-label", style="color: var(--secondary); font-weight: 600;") }}
+            {{ book_form.isbn(class="form-control", placeholder="ISBN") }}
+          </div>
 
-                    {{ book_form.category.label() }}
-                    {{ book_form.category(class="form-control", placeholder="Category") }}
+          <div class="mb-4">
+            {{ book_form.category.label(class="form-label", style="color: var(--secondary); font-weight: 600;") }}
+            {{ book_form.category(class="form-control", placeholder="Category") }}
+          </div>
 
-                    {{ book_form.price.label() }}
-                    {{ book_form.price(class="form-control", placeholder="Price") }}
+          <div class="mb-4">
+            {{ book_form.price.label(class="form-label", style="color: var(--secondary); font-weight: 600;") }}
+            {{ book_form.price(class="form-control", placeholder="Price") }}
+          </div>
 
-                    {{ book_form.author.label() }}
-                    {{ book_form.author(class="form-control", placeholder="Author")}}
+          <div class="mb-4">
+            {{ book_form.author.label(class="form-label", style="color: var(--secondary); font-weight: 600;") }}
+            {{ book_form.author(class="form-control", placeholder="Author") }}
+          </div>
 
-                    {{ book_form.stock.label() }}
-                    {{ book_form.stock(class="form-control", placeholder="Stock")}}
+          <div class="mb-4">
+            {{ book_form.stock.label(class="form-label", style="color: var(--secondary); font-weight: 600;") }}
+            {{ book_form.stock(class="form-control", placeholder="Stock") }}
+          </div>
 
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        {{book_form.submit(class="btn btn-primary")}}
-                    </div>
-                </form>
-            </div>
-        </div>
+          <div class="modal-footer" style="background-color: #f8f9fa; border-top: 1px solid #dee2e6; padding: 1rem 2rem;">
+            <button type="button" class="btn btn-secondary"
+                    data-bs-dismiss="modal"
+                    style="background-color: #6c757d; border: none; padding: 0.5rem 1.5rem; border-radius: 5px; font-weight: 600;">
+              Close
+            </button>
+            {{ book_form.submit(class="btn btn-primary",
+                                style="background-color: var(--primary); border: none; padding: 0.5rem 1.5rem; border-radius: 5px; font-weight: 600; transition: all 0.3s ease;") }}
+          </div>
+        </form>
+      </div>
     </div>
+  </div>
 </div>

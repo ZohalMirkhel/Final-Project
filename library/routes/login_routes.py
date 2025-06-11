@@ -34,22 +34,29 @@ def admin_login():
 
 @login_bp.route('/client_login', methods=['GET', 'POST'])
 def client_login():
-    form = LoginForm()  # Create a form instance
+    form = LoginForm()
 
     if form.validate_on_submit():
         email = form.email.data
         password = form.password.data
         user = User.query.filter_by(email=email).first()
 
-        if user and check_password_hash(user.password, password):
-            login_user(user)
-            flash('Logged in successfully!', 'success')
-            return redirect(url_for('client.client_home'))
+        if user:
+            # Check if the user is an admin
+            if user.role == 'admin':
+                flash('Admin accounts cannot log in to client side', 'error')
+                return render_template('client_login.html', form=form)
+
+            if check_password_hash(user.password, password):
+                login_user(user)
+                flash('Logged in successfully!', 'success')
+                return redirect(url_for('client.client_home'))
+            else:
+                flash('Invalid email or password', 'error')
         else:
             flash('Invalid email or password', 'error')
 
-    return render_template('client_login.html', form=form)  # Pass form to template
-
+    return render_template('client_login.html', form=form)
 
 
 @login_bp.route('/register', methods=['GET', 'POST'])
@@ -67,16 +74,12 @@ def registration_form():
         try:
             db.session.add(new_user)
             db.session.commit()
-            return redirect(url_for('login_bp.registration_success'))
+            return redirect(url_for('login_bp.client_login'))
         except Exception as e:
             db.session.rollback()
             flash("Registration failed: " + str(e), "error")
     return render_template('registration_form.html', form=form)
 
-
-@login_bp.route('/registration-success', methods=['GET'])
-def registration_success():
-    return render_template('registration_success.html')
 
 @login_bp.route('/admin_logout')
 @login_required

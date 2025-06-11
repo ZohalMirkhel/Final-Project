@@ -192,6 +192,7 @@ class AdminChangePasswordForm(FlaskForm):
 
 class PaymentForm(FlaskForm):
     cardholder_name = StringField('Cardholder Name', validators=[DataRequired()])
+    zip_code = StringField('Zip Code', validators=[Length(min=4, max=10)])
     card_number = StringField('Card Number', validators=[
         DataRequired(),
         Length(min=15, max=16, message='Card number must be 15-16 digits')

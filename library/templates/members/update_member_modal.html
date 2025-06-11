@@ -1,47 +1,61 @@
-<div class="modal fade" id="updateMemberModal-{{member.id}}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="bookModalLabel">Update Member</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<div class="modal fade" id="updateMemberModal-{{member.id}}" tabindex="-1" aria-labelledby="updateMemberModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border: none; border-radius: 10px; overflow: hidden;">
+            <div class="modal-header" style="background-color: var(--secondary); color: white; border-bottom: 3px solid var(--primary);">
+                <h5 class="modal-title" id="updateMemberModalLabel" style="font-weight: 600;">Update Member</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <div class="modal-body">
-
+            <div class="modal-body" style="padding: 2rem;">
                 <form action='./update-member/{{member.id}}' method="POST">
                     {{ member_form.hidden_tag() }}
-                    {{ member_form.name.label() }}
-                    {{ member_form.name(class="form-control", placeholder="Title",value= member.name) }}
 
-                    {{ member_form.phone_number.label() }}
-                    {{ member_form.phone_number(class="form-control", placeholder="ISBN",value= member.phone_number) }}
+                    <div class="mb-3">
+                        {{ member_form.name.label(class="form-label", style="color: var(--secondary); font-weight: 600;") }}
+                        {{ member_form.name(class="form-control", style="border: 1px solid #ced4da; padding: 0.5rem 1rem; border-radius: 5px;", placeholder="Title", value=member.name) }}
+                    </div>
 
-                    {{ member_form.member_name.label() }}
-                    {{ member_form.member_name(class="form-control", placeholder="Author",value= member.member_name) }}
+                    <div class="mb-3">
+                        {{ member_form.phone_number.label(class="form-label", style="color: var(--secondary); font-weight: 600;") }}
+                        {{ member_form.phone_number(class="form-control", style="border: 1px solid #ced4da; padding: 0.5rem 1rem; border-radius: 5px;", placeholder="Phone", value=member.phone_number) }}
+                    </div>
 
-                    {{ update_member_form.email.label() }}
-                    {{ update_member_form.email(class="form-control", value=member.user.email) }}
+                    <div class="mb-3">
+                        {{ member_form.member_name.label(class="form-label", style="color: var(--secondary); font-weight: 600;") }}
+                        {{ member_form.member_name(class="form-control", style="border: 1px solid #ced4da; padding: 0.5rem 1rem; border-radius: 5px;", placeholder="Username", value=member.member_name) }}
+                    </div>
 
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        {{member_form.submit(class="btn btn-primary")}}
+                    <div class="mb-4">
+                        {{ update_member_form.email.label(class="form-label", style="color: var(--secondary); font-weight: 600;") }}
+                        {{ update_member_form.email(class="form-control", style="border: 1px solid #ced4da; padding: 0.5rem 1rem; border-radius: 5px;", value=member.user.email) }}
+                    </div>
+
+                    <div class="modal-footer" style="background-color: #f8f9fa; border-top: 1px solid #dee2e6; padding: 1rem 2rem;">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                                style="background-color: #6c757d; border: none; padding: 0.5rem 1.5rem; border-radius: 5px; font-weight: 600;">
+                            Close
+                        </button>
+                        {{ member_form.submit(class="btn btn-primary", style="background-color: var(--primary); border: none; padding: 0.5rem 1.5rem; border-radius: 5px; font-weight: 600; transition: all 0.3s ease;") }}
                     </div>
                 </form>
-                <div class="mt-4">
-    <h5>Update Password</h5>
-    <form action="{{ url_for('members_bp.update_member_password', member_id=member.id) }}" method="POST">
-        {{ admin_password_form.hidden_tag() }}
-        <div class="mb-3">
-            {{ admin_password_form.new_password.label(class="form-label") }}
-            {{ admin_password_form.new_password(class="form-control") }}
-        </div>
-        <div class="mb-3">
-            {{ admin_password_form.confirm_password.label(class="form-label") }}
-            {{ admin_password_form.confirm_password(class="form-control") }}
-        </div>
-        <button type="submit" class="btn btn-warning">Update Password</button>
-    </form>
-</div>
+
+                <div class="mt-4 p-3" style="background-color: #f8f9fa; border-radius: 8px;">
+                    <h5 style="color: var(--secondary); font-weight: 600; margin-bottom: 1rem;">Update Password</h5>
+                    <form action="{{ url_for('members_bp.update_member_password', member_id=member.id) }}" method="POST">
+                        {{ admin_password_form.hidden_tag() }}
+                        <div class="mb-3">
+                            {{ admin_password_form.new_password.label(class="form-label", style="color: var(--secondary); font-weight: 600;") }}
+                            {{ admin_password_form.new_password(class="form-control", style="border: 1px solid #ced4da; padding: 0.5rem 1rem; border-radius: 5px;") }}
+                        </div>
+                        <div class="mb-3">
+                            {{ admin_password_form.confirm_password.label(class="form-label", style="color: var(--secondary); font-weight: 600;") }}
+                            {{ admin_password_form.confirm_password(class="form-control", style="border: 1px solid #ced4da; padding: 0.5rem 1rem; border-radius: 5px;") }}
+                        </div>
+                        <button type="submit" class="btn btn-warning" style="background-color: var(--primary); border: none; padding: 0.5rem 1.5rem; border-radius: 5px; font-weight: 600; transition: all 0.3s ease;">
+                            Update Password
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

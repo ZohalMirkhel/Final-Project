@@ -630,7 +630,8 @@ def cancel_membership():
 
     # Only allow cancellation if membership is active
     if member.membership_status != 'active' or member.membership_expiry < datetime.utcnow():
-        return jsonify({'success': False, 'message': 'No active membership to cancel'}), 400
+        flash('No active membership to cancel.', 'error')
+        return redirect(url_for('client.client_home'))
 
     # Calculate refund
     total_days = (member.membership_expiry - member.membership_start).days
@@ -658,10 +659,8 @@ def cancel_membership():
 
     db.session.commit()
 
-    return jsonify({
-        'success': True,
-        'message': f'Membership cancelled. Refund amount: ${refund_amount:.2f}'
-    })
+    flash(f"Membership cancelled. Refund amount: ${refund_amount:.2f}", "success")
+    return redirect(url_for('client.client_home'))
 
 @client.route('/return-book', methods=['POST'])
 @login_required

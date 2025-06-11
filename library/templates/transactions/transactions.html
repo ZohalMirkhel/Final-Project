@@ -4,34 +4,131 @@
     Transactions
 {% endblock %}
 
+{% block style %}
+  <style>
+    .transactions-container {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 31, 31, 0.1);
+      padding: 2rem;
+      margin-top: 2rem;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-action {
+      background-color: var(--secondary);
+      color: white;
+      border: none;
+      padding: 0.5rem 1.5rem;
+      border-radius: 5px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .btn-action:hover {
+      background-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(168, 86, 5, 0.2);
+    }
+
+    .table {
+      margin-top: 1.5rem;
+      border-collapse: separate;
+      border-spacing: 0;
+      width: 100%;
+    }
+
+    .table thead th {
+      background-color: var(--secondary);
+      color: white;
+      padding: 1rem;
+      border: none;
+    }
+
+    .table tbody tr {
+      transition: background-color 0.2s ease;
+    }
+
+    .table tbody tr:hover {
+      background-color: var(--light-primary);
+    }
+
+    .table tbody td {
+      padding: 1rem;
+      border-bottom: 1px solid #e0e0e0;
+      vertical-align: middle;
+    }
+
+    .table-id {
+      width: 100px;
+    }
+
+    .empty-text {
+      color: var(--secondary);
+      font-size: 1.2rem;
+      margin-top: 2rem;
+      padding: 2rem;
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .table-responsive {
+      overflow-x: auto;
+    }
+
+    @media (max-width: 768px) {
+      .action-buttons {
+        flex-direction: column;
+      }
+
+      .btn-action {
+        width: 100%;
+      }
+    }
+  </style>
+{% endblock %}
+
 {% block content %}
+  <div class="container">
+    <div class="transactions-container">
+      <h2 class="mb-4" style="color: var(--secondary);">Transaction History</h2>
 
-    {% include 'transactions/borrow_book_modal.html' %}
-    {% include 'transactions/return_book_modal.html' %}
-    {% with available_books=books_for_sale, endpoint='transactions_bp.sell_book' %}
-        {% include 'transactions/sell_book_modal.html' %}
-    {% endwith %}
+      {% include 'transactions/borrow_book_modal.html' %}
+      {% include 'transactions/return_book_modal.html' %}
+      {% with available_books=books_for_sale, endpoint='transactions_bp.sell_book' %}
+          {% include 'transactions/sell_book_modal.html' %}
+      {% endwith %}
 
-    <button type="button" class="btn btn-dark m" data-bs-toggle="modal" data-bs-target="#borrowBookModal">
-        Borrow
-    </button>
+      <div class="action-buttons">
+        <button type="button" class="btn-action" data-bs-toggle="modal" data-bs-target="#borrowBookModal">
+          Borrow Book
+        </button>
 
-    <button type="button" class="btn btn-dark m" data-bs-toggle="modal" data-bs-target="#returnBookModal">
-        Return
-    </button>
-    <button type="button" class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#sellBookModal">
-        Sell Book
-    </button>
+        <button type="button" class="btn-action" data-bs-toggle="modal" data-bs-target="#returnBookModal">
+          Return Book
+        </button>
 
-    {% if  length > 0 %}
+        <button type="button" class="btn-action" data-bs-toggle="modal" data-bs-target="#sellBookModal">
+          Sell Book
+        </button>
+      </div>
 
-        <table class="table">
-            <thead class="table-dark">
+      {% if length > 0 %}
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
                 <tr>
                     <th scope="col" class="table-id">Transaction ID</th>
                     <th scope="col">Book Name</th>
                     <th scope="col">Member Name</th>
-                    <th scope="col">Type of Transaction</th>
+                    <th scope="col">Type</th>
                     <th scope="col">Date</th>
                     <th scope="col">Amount Paid</th>
                 </tr>
@@ -42,30 +139,38 @@
                         <th scope="row" class="table-id">
                             {{ transaction.id }}</th>
                         <td>
-    {% if transaction.book %}
-        {{ transaction.book.title }}
-    {% else %}
-        {{ transaction.book_name }}
-    {% endif %}
-</td>
+                          {% if transaction.book %}
+                            {{ transaction.book.title }}
+                          {% else %}
+                            {{ transaction.book_name }}
+                          {% endif %}
+                        </td>
                         <td>
-    {% if transaction.member_name %}
-        {{ transaction.member_name }}
-    {% elif transaction.user %}
-        {{ transaction.user.name }}
-    {% else %}
-        N/A
-    {% endif %}
-</td>
+                          {% if transaction.member_name %}
+                            {{ transaction.member_name }}
+                          {% elif transaction.user %}
+                            {{ transaction.user.name }}
+                          {% else %}
+                            N/A
+                          {% endif %}
+                        </td>
                         <td>{{ transaction.type_of_transaction }}</td>
                         <td>{{ transaction.date }}</td>
-                        <td>{{ transaction.amount}}</td>
+                        <td>
+                          {% if transaction.amount %}
+                            ${{ "%.2f"|format(transaction.amount) }}
+                          {% else %}
+                            $0.00
+                          {% endif %}
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>
-        </table>
-
-    {% else %}
-        <div class="text-center empty-text">No transaction Available</div>
-    {% endif %}
+          </table>
+        </div>
+      {% else %}
+        <div class="text-center empty-text">No transactions available</div>
+      {% endif %}
+    </div>
+  </div>
 {% endblock %}

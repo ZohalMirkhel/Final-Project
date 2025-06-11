@@ -10,44 +10,45 @@
     crossorigin="anonymous" />
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.2.1/chart.min.js"></script>
   <title>{% block title %}{% endblock %}</title>
 
   <style>
     :root {
-      --primary: #A85605;
-      --secondary: #001F1F;
-      --light-accent: rgba(168, 86, 5, 0.2);
+      --primary: #A85605; /* Brown */
+      --secondary: #0F4D4D; /* Dark green */
+      --light-green: #E6F2F2; /* Very light green */
+      --medium-green: #B2D3D3; /* Medium light green */
+      --dark-green: #002828; /* Darker green */
       --text-light: #F5F5F5;
       --text-dark: #333333;
     }
 
     body {
-      background-color: #f8f9fa;
-      font-family: 'Georgia', serif;
+      background-color: var(--light-green);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       color: var(--text-dark);
+      line-height: 1.6;
     }
 
     header {
       background-color: var(--secondary);
-      border-bottom: 3px solid var(--primary) !important;
-      padding: 1.5rem 0;
+      padding: 0.8rem 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
 
     .nav-link {
       color: var(--text-light) !important;
-      padding: 0.35rem 0.75rem !important;
+      padding: 0.5rem 1rem !important;
       margin: 0 0.25rem !important;
       border-radius: 4px;
       font-weight: 500;
-      font-size: 0.9rem;
-      transition: all 0.3s ease;
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
     }
 
     .nav-link:hover {
-      background-color: var(--light-accent);
-      color: var(--primary) !important;
-      text-decoration: none;
+      background-color: rgba(255,255,255,0.15);
+      color: var(--text-light) !important;
     }
 
     .nav-link.active {
@@ -57,12 +58,11 @@
     }
 
     .btn-outline-custom {
-      color: var(--primary);
-      border-color: var(--primary);
+      color: var(--text-light);
+      border-color: var(--text-light);
       font-weight: 500;
-      padding: 0.35rem 0.9rem;
-      font-size: 0.9rem;
-      transition: background-color 0.3s ease, color 0.3s ease;
+      padding: 0.5rem 1rem;
+      font-size: 0.95rem;
     }
 
     .btn-outline-custom:hover {
@@ -72,26 +72,35 @@
     }
 
     .alert-primary {
-      background-color: var(--light-accent);
+      background-color: rgba(168, 86, 5, 0.1);
       border-color: var(--primary);
       color: var(--secondary);
+    }
+
+    main.container {
+      background-color: white;
+      border-radius: 8px;
+      padding: 2rem;
+      margin-top: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
 
     @media (max-width: 768px) {
       .nav {
         flex-direction: column;
-        align-items: center;
+        align-items: flex-start;
       }
 
       .nav-link {
         margin: 0.25rem 0 !important;
-        width: 100%;
-        text-align: center;
+        width: auto;
+        text-align: left;
       }
 
       .text-end {
         width: 100%;
-        text-align: center !important;
+        text-align: left !important;
         margin-top: 1rem;
       }
     }
@@ -103,8 +112,8 @@
 <body>
   <header>
     <div class="container">
-      <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
-        <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+      <div class="d-flex flex-wrap align-items-center justify-content-between">
+        <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 mb-md-0">
           <li>
             <a href="{{ url_for('routes_bp.home_page') }}" class="nav-link px-2 {% if request.path == url_for('routes_bp.home_page') %}active{% endif %}">
               Home
@@ -148,35 +157,25 @@
     </div>
   </header>
 
-  <!-- Flask flash messages -->
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      {% for category, message in messages %}
-        <div class="alert alert-{{category}} alert-dismissible fade show mx-3" role="alert">
-          {{message}}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-      {% endfor %}
-    {% endif %}
-  {% endwith %}
+  <main class="container">
+    <!-- Flask flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{category}} alert-dismissible fade show mb-4" role="alert">
+            {{message}}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
 
-  {% block content %}{% endblock %}
+    {% block content %}{% endblock %}
+  </main>
 
   <script src="{{ url_for('static', filename='app.js') }}"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js"
     crossorigin="anonymous"></script>
-
-  <script>
-    // Add active class to current page link
-    document.addEventListener('DOMContentLoaded', function () {
-      const currentPath = window.location.pathname;
-      document.querySelectorAll('.nav-link').forEach(link => {
-        if (link.getAttribute('href') === currentPath) {
-          link.classList.add('active');
-        }
-      });
-    });
-  </script>
 
   {% block script %}{% endblock %}
 </body>

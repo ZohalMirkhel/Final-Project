@@ -1,43 +1,48 @@
-<div class="modal fade" id="borrowBookModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="bookModalLabel">Borrow Book</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<div class="modal fade" id="borrowBookModal" tabindex="-1" aria-labelledby="borrowBookModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border: none; border-radius: 10px; overflow: hidden;">
+            <div class="modal-header" style="background-color: var(--secondary); color: white; border-bottom: 3px solid var(--primary);">
+                <h5 class="modal-title" id="borrowBookModalLabel" style="font-weight: 600;">Borrow Book</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="padding: 2rem;">
                 <form action="{{ url_for('transactions_bp.borrow_book') }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                    <label class="form-label">Select Book:</label>
-                    <select name="book_name" class="custom-select form-control" id="book_name" required>
-                        <option value="" selected disabled>Select a book to borrow</option>
-                        {% for book in books_to_borrow %}
-                            <option value="{{ book.id }}">{{ book.title }}</option>
-                        {% endfor %}
-                    </select>
 
-                    <label class="form-label mt-3">Select Member:</label>
-                    <select name="member_name" class="custom-select form-control" id="member_name" required>
-                        <option value="" selected disabled>Select a member</option>
-                        {% for member in members_can_borrow %}
-                            <option value="{{ member.id }}">{{ member.member_name }}</option>
-                        {% endfor %}
-                    </select>
-
-<!--                    <div class="mb-3">-->
-<!--                        <label class="form-label">Member ID Information:</label>-->
-<!--                        <textarea name="id_info" class="form-control" placeholder="Enter ID details or upload picture" required></textarea>-->
-<!--                    </div>-->
-
-                    <!-- Add due date information -->
-                    <div class="alert alert-info mt-3">
-                        <i class="bi bi-info-circle"></i> This book must be returned within 14 days.
-                        Late returns will incur a $10/day fee.
+                    <div class="mb-4">
+                        <label class="form-label" style="color: var(--secondary); font-weight: 600;">Select Book:</label>
+                        <select name="book_name" class="form-select" id="book_name" required style="border: 1px solid #ced4da; padding: 0.5rem 1rem; border-radius: 5px;">
+                            <option value="" selected disabled>Select a book to borrow</option>
+                            {% for book in books_to_borrow %}
+                                <option value="{{ book.id }}">{{ book.title }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
 
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary">Borrow</button>
+                    <div class="mb-4">
+                        <label class="form-label" style="color: var(--secondary); font-weight: 600;">Select Member:</label>
+                        <select name="member_name" class="form-select" id="member_name" required style="border: 1px solid #ced4da; padding: 0.5rem 1rem; border-radius: 5px;">
+                            <option value="" selected disabled>Select a member</option>
+                            {% for member in members_can_borrow %}
+                                <option value="{{ member.id }}">{{ member.member_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="alert alert-info mt-3 mb-4" style="background-color: var(--light-primary); border: none; border-radius: 8px; color: var(--secondary);">
+                        <i class="bi bi-info-circle"></i> This book must be returned within 10 days.
+                        Late returns will incur a $0.5/day fee.
+                    </div>
+
+                    <div class="modal-footer" style="background-color: #f8f9fa; border-top: 1px solid #dee2e6; padding: 1rem 2rem;">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                                style="background-color: #6c757d; border: none; padding: 0.5rem 1.5rem; border-radius: 5px; font-weight: 600;">
+                            Close
+                        </button>
+                        <button type="submit" class="btn btn-primary"
+                                style="background-color: var(--primary); border: none; padding: 0.5rem 1.5rem; border-radius: 5px; font-weight: 600; transition: all 0.3s ease;">
+                            Borrow
+                        </button>
                     </div>
                 </form>
             </div>
