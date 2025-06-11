@@ -1,7 +1,3 @@
-Certainly! Here's a **formatted project description** for your Library Management System with all your requirements, structured similarly to professional open-source project documentation (ideal for a `README.md`):
-
----
-
 ## 📚 Library Management System (Flask + SQLite + Tailwind CSS)
 
 A modern Library Management System built using **Flask**, **SQLite**, **Python**, **JavaScript**, and **Tailwind CSS**. The system supports **user membership purchases**, **book borrowing and buying**, and **admin-level management** of users, books, and borrowing data.
