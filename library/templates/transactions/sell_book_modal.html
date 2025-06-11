@@ -1,26 +1,26 @@
 <form action="{{ url_for(endpoint) }}" method="POST">
 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 <div class="modal fade" id="sellBookModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Sell Book</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border: none; border-radius: 10px; overflow: hidden;">
+            <div class="modal-header" style="background-color: var(--secondary); color: white; border-bottom: 3px solid var(--primary);">
+                <h5 class="modal-title" style="font-weight: 600;">Sell Book</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="padding: 2rem;">
                 <!-- Hidden book ID field -->
                 <input type="hidden" id="sell_book_id" name="book_id">
 
                 <!-- Dynamic content area -->
-                <div class="mb-3" id="specific-book-display" style="display:none;">
-                    <label class="form-label">Book</label>
-                    <div id="sell_book_title" class="form-control-plaintext">-</div>
+                <div class="mb-4" id="specific-book-display" style="display:none;">
+                    <label class="form-label" style="color: var(--secondary); font-weight: 600;">Selected Book</label>
+                    <div id="sell_book_title" class="form-control-plaintext p-2" style="background-color: var(--light-primary); border-radius: 5px; color: var(--secondary); font-weight: 500;">-</div>
                 </div>
 
                 <!-- Book selection dropdown -->
-                <div class="mb-3" id="book-selection-dropdown">
-                    <label class="form-label">Select Book</label>
-                    <select class="form-select" id="book_selection">
+                <div class="mb-4" id="book-selection-dropdown">
+                    <label class="form-label" style="color: var(--secondary); font-weight: 600;">Select Book</label>
+                    <select class="form-select" id="book_selection" style="border: 1px solid #ced4da; padding: 0.5rem 1rem; border-radius: 5px;">
                         <option value="">Choose a book</option>
                         {% for book in available_books %}
                         <option value="{{ book.id }}"
@@ -32,18 +32,26 @@
                     </select>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Member ID</label>
-                    <input type="text" class="form-control" name="member_id" required>
+                <div class="mb-4">
+                    <label class="form-label" style="color: var(--secondary); font-weight: 600;">Member ID</label>
+                    <input type="text" class="form-control" name="member_id" required
+                           style="border: 1px solid #ced4da; padding: 0.5rem 1rem; border-radius: 5px;">
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Price (₹)</label>
-                    <input type="number" class="form-control" id="price" name="price" required>
+                <div class="mb-4">
+                    <label class="form-label" style="color: var(--secondary); font-weight: 600;">Price (₹)</label>
+                    <input type="number" class="form-control" id="price" name="price" required
+                           style="border: 1px solid #ced4da; padding: 0.5rem 1rem; border-radius: 5px;">
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="submit" class="btn btn-primary">Sell</button>
+            <div class="modal-footer" style="background-color: #f8f9fa; border-top: 1px solid #dee2e6; padding: 1rem 2rem;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                        style="background-color: #6c757d; border: none; padding: 0.5rem 1.5rem; border-radius: 5px; font-weight: 600;">
+                    Close
+                </button>
+                <button type="submit" class="btn btn-primary"
+                        style="background-color: var(--primary); border: none; padding: 0.5rem 1.5rem; border-radius: 5px; font-weight: 600; transition: all 0.3s ease;">
+                    Sell Book
+                </button>
             </div>
         </div>
     </div>
@@ -57,10 +65,8 @@
         const specificBookDisplay = document.getElementById('specific-book-display');
         const bookSelectionDropdown = document.getElementById('book-selection-dropdown');
 
-        // Remove required attribute initially
         bookSelection.removeAttribute('required');
 
-        // Handle book selection from dropdown
         bookSelection.addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
             if (selectedOption.value) {
@@ -70,11 +76,9 @@
             }
         });
 
-        // Handle modal show event
         sellModal.addEventListener('show.bs.modal', function(event) {
             const button = event.relatedTarget;
 
-            // Reset form
             document.getElementById('sell_book_id').value = '';
             specificBookDisplay.style.display = 'none';
             bookSelectionDropdown.style.display = 'block';
@@ -82,10 +86,8 @@
             document.getElementById('price').value = '';
             document.querySelector('input[name="member_id"]').value = '';
 
-            // Remove required attribute initially
             bookSelection.removeAttribute('required');
 
-            // If triggered from book-specific button
             if (button && button.hasAttribute('data-book-id')) {
                 const bookId = button.getAttribute('data-book-id');
                 const bookTitle = button.getAttribute('data-book-title');
@@ -95,19 +97,15 @@
                 document.getElementById('sell_book_title').textContent = bookTitle;
                 document.getElementById('price').value = bookPrice || '0';
 
-                // Show specific book display and hide dropdown
                 specificBookDisplay.style.display = 'block';
                 bookSelectionDropdown.style.display = 'none';
 
-                // Remove required since we're using specific book
                 bookSelection.removeAttribute('required');
             } else {
-                // Add required for dropdown mode
                 bookSelection.setAttribute('required', true);
             }
         });
 
-        // Reset on modal close
         sellModal.addEventListener('hidden.bs.modal', function() {
             specificBookDisplay.style.display = 'none';
             bookSelectionDropdown.style.display = 'block';

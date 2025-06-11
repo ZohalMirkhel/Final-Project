@@ -1,41 +1,56 @@
 <div class="modal fade" id="memberModal" tabindex="-1" aria-labelledby="memberModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="memberModalLabel">Create Member</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border: none; border-radius: 10px; overflow: hidden;">
+            <div class="modal-header" style="background-color: var(--secondary); color: white; border-bottom: 3px solid var(--primary);">
+                <h5 class="modal-title" id="memberModalLabel" style="font-weight: 600;">Create Member</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <div class="modal-body text-left">
+            <div class="modal-body" style="padding: 2rem;">
                 <form action="/members" method="POST">
                     {{ admin_form.hidden_tag() }}
 
-                    {{ admin_form.name.label() }}
-                    {{ admin_form.name(class="form-control", placeholder="Full Name") }}
+                    <div class="mb-3">
+                        {{ admin_form.name.label(class="form-label", style="color: var(--secondary); font-weight: 600;") }}
+                        {{ admin_form.name(class="form-control", style="border: 1px solid #ced4da; padding: 0.5rem 1rem; border-radius: 5px;", placeholder="Full Name") }}
+                    </div>
 
-                    {{ admin_form.member_name.label() }}
-                    {{ admin_form.member_name(class="form-control", placeholder="Username") }}
+                    <div class="mb-3">
+                        {{ admin_form.member_name.label(class="form-label", style="color: var(--secondary); font-weight: 600;") }}
+                        {{ admin_form.member_name(class="form-control", style="border: 1px solid #ced4da; padding: 0.5rem 1rem; border-radius: 5px;", placeholder="Username") }}
+                    </div>
 
-                    {{ admin_form.email.label() }}
-                    {{ admin_form.email(class="form-control", placeholder="Email") }}
+                    <div class="mb-3">
+                        {{ admin_form.email.label(class="form-label", style="color: var(--secondary); font-weight: 600;") }}
+                        {{ admin_form.email(class="form-control", style="border: 1px solid #ced4da; padding: 0.5rem 1rem; border-radius: 5px;", placeholder="Email") }}
+                    </div>
 
-                    {{ admin_form.phone.label() }}
-                    {{ admin_form.phone(class="form-control", placeholder="Phone") }}
+                    <div class="mb-3">
+                        {{ admin_form.phone.label(class="form-label", style="color: var(--secondary); font-weight: 600;") }}
+                        {{ admin_form.phone(class="form-control", style="border: 1px solid #ced4da; padding: 0.5rem 1rem; border-radius: 5px;", placeholder="Phone") }}
+                    </div>
 
-                    {{ admin_form.address.label() }}
-                    {{ admin_form.address(class="form-control", placeholder="Address") }}
+                    <div class="mb-3">
+                        {{ admin_form.address.label(class="form-label", style="color: var(--secondary); font-weight: 600;") }}
+                        {{ admin_form.address(class="form-control", style="border: 1px solid #ced4da; padding: 0.5rem 1rem; border-radius: 5px;", placeholder="Address") }}
+                    </div>
 
-                    {{ admin_form.password.label() }}
-                    {{ admin_form.password(class="form-control", placeholder="Password") }}
+                    <div class="mb-3">
+                        {{ admin_form.password.label(class="form-label", style="color: var(--secondary); font-weight: 600;") }}
+                        {{ admin_form.password(class="form-control", style="border: 1px solid #ced4da; padding: 0.5rem 1rem; border-radius: 5px;", placeholder="Password") }}
+                    </div>
 
-                    {{ admin_form.membership_months.label() }}
-                    {{ admin_form.membership_months(class="form-control") }}
+                    <div class="mb-4">
+                        {{ admin_form.membership_months.label(class="form-label", style="color: var(--secondary); font-weight: 600;") }}
+                        {{ admin_form.membership_months(class="form-control", style="border: 1px solid #ced4da; padding: 0.5rem 1rem; border-radius: 5px;") }}
+                    </div>
 
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <div class="modal-footer" style="background-color: #f8f9fa; border-top: 1px solid #dee2e6; padding: 1rem 2rem;">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                                style="background-color: #6c757d; border: none; padding: 0.5rem 1.5rem; border-radius: 5px; font-weight: 600;">
                             Close
                         </button>
-                        {{ admin_form.submit(class="btn btn-primary") }}
+                        {{ admin_form.submit(class="btn btn-primary", style="background-color: var(--primary); border: none; padding: 0.5rem 1.5rem; border-radius: 5px; font-weight: 600; transition: all 0.3s ease;") }}
                     </div>
                 </form>
             </div>

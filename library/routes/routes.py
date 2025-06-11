@@ -4,11 +4,11 @@ from flask_login import login_required, current_user
 from sqlalchemy import desc
 from datetime import datetime
 from library.models import Feedback
-from library.forms import book_form, member_form, LoginForm, AdminCreateMemberForm
+from library.forms import book_form, AdminCreateMemberForm
 from library.models import Book, Member
 from flask import Blueprint, render_template, redirect, url_for, current_app
+# for test email from flask_mail import Mail, Message
 routes_bp = Blueprint('routes_bp', __name__)
-
 
 @routes_bp.route('/')
 def welcome():
@@ -25,7 +25,6 @@ def welcome():
 #     )
 #     mail.send(msg)
 #     return "Email sent!"
-
 
 @routes_bp.route('/home')
 @login_required

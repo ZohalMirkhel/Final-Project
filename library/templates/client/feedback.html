@@ -1,66 +1,158 @@
-<!-- feedback.html - updated content -->
 {% extends 'base_client.html' %}
+
+{% block style %}
+<style>
+  :root {
+    --primary: #A85605;
+    --primary-hover: #8a4404;
+    --secondary: #0F4D4D;
+    --light-bg: #F5F5F5;
+    --border: #e2e8f0;
+    --text-dark: #333333;
+    --text-muted: #6c757d;
+    --danger: #d9534f;
+  }
+
+  h2 {
+    color: var(--primary);
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group {
+    margin-bottom: 1.2rem;
+  }
+
+  .form-control {
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    padding: 0.75rem 1rem;
+    transition: border-color 0.2s ease;
+  }
+
+  .form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.2rem rgba(168, 86, 5, 0.1);
+  }
+
+  .btn-primary {
+    background-color: var(--primary);
+    border: none;
+    padding: 0.6rem 1.25rem;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+  }
+
+  .btn-primary:hover {
+    background-color: var(--primary-hover);
+  }
+
+  .feedback-list .card {
+    border: 2px solid var(--secondary);
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease;
+  }
+
+  .feedback-list .card:hover {
+    transform: translateY(-4px);
+  }
+
+  .card-title {
+    color: var(--secondary);
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .card-text {
+    font-size: 0.95rem;
+    color: var(--text-dark);
+  }
+
+  .text-warning {
+    font-size: 1.2rem;
+    color: #f0ad4e;
+  }
+
+  .text-muted small {
+    color: var(--text-muted);
+  }
+
+  .error-text {
+    color: var(--danger);
+    font-size: 0.875rem;
+  }
+
+  @media (max-width: 768px) {
+    .row > div {
+      margin-bottom: 2rem;
+    }
+  }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="row">
-    <div class="col-md-6">
-        <h2>Submit Feedback</h2>
-        <form method="POST">
-            {{ form.hidden_tag() }}
-            <div class="form-group">
-                {{ form.content.label }}<br>
-                {{ form.content(class="form-control", rows=4) }}
-                {% for error in form.content.errors %}
-                    <span style="color: red;">{{ error }}</span>
-                {% endfor %}
-            </div>
-            <div class="form-group">
-                {{ form.rating.label }}<br>
-                {{ form.rating(class="form-control") }}
-                {% for error in form.rating.errors %}
-                    <span style="color: red;">{{ error }}</span>
-                {% endfor %}
-            </div>
-            <div class="form-group">
-                {{ form.submit(class="btn btn-primary") }}
-            </div>
-        </form>
-    </div>
+  <div class="col-md-6">
+    <h2>Submit Feedback</h2>
+    <form method="POST">
+      {{ form.hidden_tag() }}
+      <div class="form-group">
+        {{ form.content.label }}
+        {{ form.content(class="form-control", rows=4) }}
+        {% for error in form.content.errors %}
+          <div class="error-text">{{ error }}</div>
+        {% endfor %}
+      </div>
+      <div class="form-group">
+        {{ form.rating.label }}
+        {{ form.rating(class="form-control") }}
+        {% for error in form.rating.errors %}
+          <div class="error-text">{{ error }}</div>
+        {% endfor %}
+      </div>
+      <div class="form-group">
+        {{ form.submit(class="btn btn-primary") }}
+      </div>
+    </form>
+  </div>
 
-    <div class="col-md-6">
-        <h2>All Feedbacks</h2>
-        {% if feedbacks %}
-            <div class="feedback-list">
-                {% for feedback in feedbacks %}
-                    <div class="card mb-3">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <h5 class="card-title">
-                                    {% if feedback.member %}
-                                        {{ feedback.member.name }} (Member)
-                                    {% elif feedback.user %}
-                                        {{ feedback.user.name }} (User)
-                                    {% else %}
-                                        Anonymous
-                                    {% endif %}
-                                </h5>
-                                <div class="text-warning">
-                                    {% for i in range(feedback.rating) %}
-                                        ★
-                                    {% endfor %}
-                                </div>
-                            </div>
-                            <p class="card-text">{{ feedback.content }}</p>
-                            <p class="text-muted">
-                                <small>{{ feedback.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
-                            </p>
-                        </div>
-                    </div>
-                {% endfor %}
+  <div class="col-md-6">
+    <h2>All Feedbacks</h2>
+    {% if feedbacks %}
+      <div class="feedback-list">
+        {% for feedback in feedbacks %}
+          <div class="card mb-3">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                  {% if feedback.member %}
+                    {{ feedback.member.name }} (Member)
+                  {% elif feedback.user %}
+                    {{ feedback.user.name }} (User)
+                  {% else %}
+                    Anonymous
+                  {% endif %}
+                </h5>
+                <div class="text-warning">
+                  {% for i in range(feedback.rating) %}
+                    ★
+                  {% endfor %}
+                </div>
+              </div>
+              <p class="card-text mt-2">{{ feedback.content }}</p>
+              <p class="text-muted">
+                <small>{{ feedback.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+              </p>
             </div>
-        {% else %}
-            <p>No feedbacks yet. Be the first to share!</p>
-        {% endif %}
-    </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-muted">No feedbacks yet. Be the first to share!</p>
+    {% endif %}
+  </div>
 </div>
 {% endblock %}

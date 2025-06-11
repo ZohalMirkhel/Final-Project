@@ -3,9 +3,10 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user, logout_user
 from datetime import datetime, date, timedelta
 from library.models import Book, Checkout, Cart, Feedback, Transaction, Member, Book_borrowed, User, ReturnRequest
-from library.forms import EmptyForm, ProfileForm, MembershipForm, ReturnBookForm, FeedbackForm, ChangePasswordForm
+from library.forms import EmptyForm, ProfileForm, MembershipForm, ReturnBookForm, FeedbackForm, ChangePasswordForm, PaymentForm
 from werkzeug.security import generate_password_hash, check_password_hash
 from library import db
+from sqlalchemy.sql import exists
 import random
 from library import mail
 client = Blueprint('client', __name__)
@@ -242,8 +243,7 @@ def delete_account():
     flash('Your account has been permanently deleted', 'info')
     return redirect(url_for('login_bp.client_login'))
 
-
-# client_routes.py
+#Show Client History
 @client.route('/history')
 @login_required
 def history():
@@ -255,10 +255,15 @@ def history():
         # Completed returns
         checkouts = Checkout.query.filter_by(member_id=member.id).all()
 
-        # Pending returns
+        # Pending returns - only show requests where book hasn't been returned
         pending_returns = ReturnRequest.query.filter(
             ReturnRequest.member_id == member.id,
-            ReturnRequest.is_completed == False
+            ReturnRequest.is_completed == False,
+            # Check that the book hasn't been returned in the Checkout table
+            ~exists().where(
+                (Checkout.id == ReturnRequest.checkout_id) &
+                (Checkout.return_date.isnot(None))
+            )
         ).options(db.joinedload(ReturnRequest.book)).all()
 
     # Purchases remain the same
@@ -332,6 +337,7 @@ def is_active_member(user):
 @client.route('/cart')
 @login_required
 def view_cart():
+    payment_form = PaymentForm()
     cart_items = Cart.query.options(db.joinedload(Cart.book)) \
         .filter_by(user_id=current_user.id) \
         .all()
@@ -355,6 +361,7 @@ def view_cart():
                            subtotal=subtotal,
                            delivery_fee=delivery_fee,
                            total=total,
+                           payment_form=payment_form,
                            has_borrow_items=has_borrow_items,
                            is_active_member=is_active_member_status,
                            form=form)
@@ -377,6 +384,10 @@ def remove_from_cart(cart_id):
 @client.route('/checkout-cart', methods=['POST'])
 @login_required
 def checkout_cart():
+    cardholder_name = request.form.get('cardholder_name')
+    card_number = request.form.get('card_number')
+    expiry_date = request.form.get('expiry_date')
+    cvv = request.form.get('cvv')
     cart_items = Cart.query.options(db.joinedload(Cart.book)) \
         .filter_by(user_id=current_user.id) \
         .all()
@@ -388,6 +399,18 @@ def checkout_cart():
 
     member = Member.query.filter_by(user_id=current_user.id).first()
     is_active_member_status = member and member.is_active_member()
+
+    if not all([cardholder_name, card_number, expiry_date, cvv]):
+        flash('Please fill all payment details', 'danger')
+        return redirect(url_for('client.view_cart'))
+
+    if len(card_number) not in (15, 16):
+        flash('Invalid card number', 'danger')
+        return redirect(url_for('client.view_cart'))
+
+    if len(cvv) not in (3, 4):
+        flash('Invalid CVV', 'danger')
+        return redirect(url_for('client.view_cart'))
 
     # Borrow limit check
     if num_borrow_in_cart > 0 and member:
@@ -507,7 +530,7 @@ def my_books():
     returned_books = []
 
     if member:
-        # Use joinedload to fetch related Book objects
+        # To fetch related Book objects
         current_borrowed = db.session.query(Checkout, Book)\
             .join(Book, Book.id == Checkout.book_id)\
             .filter(
@@ -537,6 +560,10 @@ def my_books():
 @login_required
 def buy_membership():
     months = int(request.form.get('months', 1))
+    cardholder_name = request.form.get('cardholder_name')
+    card_number = request.form.get('card_number')
+    expiry_date = request.form.get('expiry_date')
+    cvv = request.form.get('cvv')
     fee_per_month = 20.0
 
     # Use discounted pricing for known plans
@@ -546,6 +573,9 @@ def buy_membership():
 
     # Check if user already has a member record
     member = Member.query.filter_by(phone_number=current_user.phone).first()
+    if not all([cardholder_name, card_number, expiry_date, cvv]):
+        flash('Please fill all payment details', 'danger')
+        return redirect(url_for('client.client_home'))
 
     if member:
         # Ensure user_id is set
@@ -600,7 +630,8 @@ def cancel_membership():
 
     # Only allow cancellation if membership is active
     if member.membership_status != 'active' or member.membership_expiry < datetime.utcnow():
-        return jsonify({'success': False, 'message': 'No active membership to cancel'}), 400
+        flash('No active membership to cancel.', 'error')
+        return redirect(url_for('client.client_home'))
 
     # Calculate refund
     total_days = (member.membership_expiry - member.membership_start).days
@@ -628,10 +659,8 @@ def cancel_membership():
 
     db.session.commit()
 
-    return jsonify({
-        'success': True,
-        'message': f'Membership cancelled. Refund amount: ${refund_amount:.2f}'
-    })
+    flash(f"Membership cancelled. Refund amount: ${refund_amount:.2f}", "success")
+    return redirect(url_for('client.client_home'))
 
 @client.route('/return-book', methods=['POST'])
 @login_required

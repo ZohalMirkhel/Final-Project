@@ -2,13 +2,12 @@ from flask import Blueprint
 from flask import render_template, redirect, url_for, flash, request
 
 from library import db
-from library.forms import AdminCreateMemberForm, member_form, AdminChangePasswordForm, UpdateMemberForm
+from library.forms import AdminCreateMemberForm, member_form, AdminChangePasswordForm, UpdateMemberForm, AdminCreateAdminForm
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import current_user
 from library.models import Book, Member, Transaction, User
 from datetime import datetime, timedelta, date
-from sqlalchemy import or_
 
-# external imports
 
 
 members_bp = Blueprint('members_bp', __name__)
@@ -20,12 +19,10 @@ def members_page():
     member_form_instance = member_form()
     admin_password_form = AdminChangePasswordForm()
     update_member_form = UpdateMemberForm()
-    # Query members once
     members = Member.query.filter(
         Member.membership_status != 'cancelled'
     ).order_by('id').all()
 
-    # Precompute total paid for each member
     for member in members:
         total_paid = Transaction.query.filter_by(
             member_id=member.id,
@@ -40,7 +37,6 @@ def members_page():
     ).all()
     books_for_sale = Book.query.filter(Book.stock > 0).all()
 
-    # Fix: Get books that are currently borrowed (both admin and client)
     from library.models import Book_borrowed, Checkout
 
     # Get admin borrows
@@ -69,7 +65,7 @@ def members_page():
             role='customer'
         )
         db.session.add(new_user)
-        db.session.flush()  # Get new_user.id before commit
+        db.session.flush()
 
         # Create Member linked to User
         start_date = datetime.utcnow()
@@ -81,12 +77,11 @@ def members_page():
             membership_status='active',
             membership_start=start_date,
             membership_expiry=expiry_date,
-            membership_fee=20.0,  # Default fee
+            membership_fee=20.0,
             user_id=new_user.id
         )
         db.session.add(new_member)
 
-        # Record transaction
         transaction = Transaction(
             book_name="Membership Fee",
             member_name=new_member.member_name,
@@ -122,7 +117,6 @@ def members_page():
 
 
 # updates a member
-# member_routes.py
 @members_bp.route('/update-member/<member_id>', methods=['GET', 'POST'])
 def update_member(member_id):
     member = Member.query.filter_by(id=member_id).first()
@@ -169,7 +163,6 @@ def renew_membership(member_id):
         flash("Member not found", category="danger")
         return redirect(url_for('members_bp.members_page'))
 
-    # Get the fee per month (default to 20.0 if not set)
     fee_per_month = float(request.form.get('fee', 20.0))
     months = int(request.form.get('months', 1))
     cost = months * fee_per_month
@@ -218,13 +211,13 @@ def cancel_membership(member_id):
 
     # Calculate total membership duration in days
     total_days = (member.membership_expiry - member.membership_start).days
-    if total_days <= 0:  # Prevent division by zero
+    if total_days <= 0:
         flash("Invalid membership duration", category='danger')
         return redirect(url_for('members_bp.members_page'))
 
     # Calculate used days
     used_days = (datetime.utcnow() - member.membership_start).days
-    unused_days = max(0, total_days - used_days)  # Ensure non-negative
+    unused_days = max(0, total_days - used_days)
 
     # Calculate total fee paid (approximate months)
     total_months = total_days / 30.0
@@ -284,3 +277,128 @@ def update_member_password(member_id):
             flash(f"Error: {error[0]}", category="danger")
 
     return redirect(url_for('members_bp.members_page'))
+
+# Add to members_routes.py
+
+# Admin management page
+@members_bp.route('/admins')
+def admins_page():
+    admins = User.query.filter_by(role='admin').all()
+    admin_form = AdminCreateAdminForm()
+    return render_template('members/admins.html',
+                         admins=admins,
+                         admin_form=admin_form)
+
+# Create admin
+@members_bp.route('/create-admin', methods=['POST'])
+def create_admin():
+    form = AdminCreateAdminForm()
+    if form.validate_on_submit():
+        hashed_password = generate_password_hash(form.password.data)
+        new_admin = User(
+            name=form.name.data,
+            phone=form.phone.data,
+            email=form.email.data,
+            password=hashed_password,
+            address=form.address.data,
+            role='admin'
+        )
+        db.session.add(new_admin)
+        db.session.commit()
+        flash('Admin created successfully!', 'success')
+    else:
+        for err_msgs in form.errors.values():
+            for err_msg in err_msgs:
+                flash(f'Error creating admin: {err_msg}', category='danger')
+    return redirect(url_for('members_bp.admins_page'))
+
+# Update admin
+@members_bp.route('/update-admin/<int:admin_id>', methods=['POST'])
+def update_admin(admin_id):
+    admin = User.query.get(admin_id)
+    if not admin or admin.role != 'admin':
+        flash("Admin not found", category="danger")
+        return redirect(url_for('members_bp.admins_page'))
+
+    new_name = request.form.get("name")
+    new_phone = request.form.get("phone")
+    new_email = request.form.get("email")
+    new_address = request.form.get("address")
+
+    try:
+        # Validate email uniqueness
+        if new_email != admin.email:
+            existing_user = User.query.filter(User.email == new_email, User.id != admin.id).first()
+            if existing_user:
+                flash("Email already in use by another user", category="danger")
+                return redirect(url_for('members_bp.admins_page'))
+
+        # Validate phone uniqueness
+        if new_phone != admin.phone:
+            existing_user = User.query.filter(User.phone == new_phone, User.id != admin.id).first()
+            if existing_user:
+                flash("Phone number already in use by another user", category="danger")
+                return redirect(url_for('members_bp.admins_page'))
+
+        # Update admin fields
+        admin.name = new_name
+        admin.phone = new_phone
+        admin.email = new_email
+        admin.address = new_address
+
+        db.session.commit()
+        flash("Admin updated successfully!", category="success")
+
+    except Exception as e:
+        flash(f"Failed to update admin: {str(e)}", category="danger")
+
+    return redirect(url_for('members_bp.admins_page'))
+
+# Delete admin
+@members_bp.route('/delete-admin/<int:admin_id>', methods=['POST'])
+def delete_admin(admin_id):
+    if current_user.id == admin_id:
+        flash("You cannot delete your own account!", category="danger")
+        return redirect(url_for('members_bp.admins_page'))
+
+    admin = User.query.get(admin_id)
+    if not admin or admin.role != 'admin':
+        flash("Admin not found", category="danger")
+        return redirect(url_for('members_bp.admins_page'))
+
+    try:
+        db.session.delete(admin)
+        db.session.commit()
+        flash("Admin deleted successfully!", category="success")
+    except Exception as e:
+        flash(f"Failed to delete admin: {str(e)}", category="danger")
+
+    return redirect(url_for('members_bp.admins_page'))
+
+# Update admin password
+@members_bp.route('/update-admin-password/<int:admin_id>', methods=['POST'])
+def update_admin_password(admin_id):
+    admin = User.query.get(admin_id)
+    if not admin or admin.role != 'admin':
+        flash("Admin not found", category="danger")
+        return redirect(url_for('members_bp.admins_page'))
+
+    form = AdminChangePasswordForm()
+    if form.validate_on_submit():
+        # Additional validation
+        if len(form.new_password.data) < 8:
+            flash("Password must be at least 8 characters", category="danger")
+            return redirect(url_for('members_bp.admins_page'))
+
+        if not any(char in '!@#$%^&*(),.?":{}|<>' for char in form.new_password.data):
+            flash("Password must contain at least one special character", category="danger")
+            return redirect(url_for('members_bp.admins_page'))
+
+        admin.password = generate_password_hash(form.new_password.data)
+        db.session.commit()
+        flash("Password updated successfully!", category="success")
+    else:
+        for error in form.errors.values():
+            flash(f"Error: {error[0]}", category="danger")
+
+    return redirect(url_for('members_bp.admins_page'))
