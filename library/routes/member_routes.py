@@ -2,8 +2,9 @@ from flask import Blueprint
 from flask import render_template, redirect, url_for, flash, request
 
 from library import db
-from library.forms import AdminCreateMemberForm, member_form, AdminChangePasswordForm, UpdateMemberForm
+from library.forms import AdminCreateMemberForm, member_form, AdminChangePasswordForm, UpdateMemberForm, AdminCreateAdminForm
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import current_user
 from library.models import Book, Member, Transaction, User
 from datetime import datetime, timedelta, date
 
@@ -276,3 +277,128 @@ def update_member_password(member_id):
             flash(f"Error: {error[0]}", category="danger")
 
     return redirect(url_for('members_bp.members_page'))
+
+# Add to members_routes.py
+
+# Admin management page
+@members_bp.route('/admins')
+def admins_page():
+    admins = User.query.filter_by(role='admin').all()
+    admin_form = AdminCreateAdminForm()
+    return render_template('members/admins.html',
+                         admins=admins,
+                         admin_form=admin_form)
+
+# Create admin
+@members_bp.route('/create-admin', methods=['POST'])
+def create_admin():
+    form = AdminCreateAdminForm()
+    if form.validate_on_submit():
+        hashed_password = generate_password_hash(form.password.data)
+        new_admin = User(
+            name=form.name.data,
+            phone=form.phone.data,
+            email=form.email.data,
+            password=hashed_password,
+            address=form.address.data,
+            role='admin'
+        )
+        db.session.add(new_admin)
+        db.session.commit()
+        flash('Admin created successfully!', 'success')
+    else:
+        for err_msgs in form.errors.values():
+            for err_msg in err_msgs:
+                flash(f'Error creating admin: {err_msg}', category='danger')
+    return redirect(url_for('members_bp.admins_page'))
+
+# Update admin
+@members_bp.route('/update-admin/<int:admin_id>', methods=['POST'])
+def update_admin(admin_id):
+    admin = User.query.get(admin_id)
+    if not admin or admin.role != 'admin':
+        flash("Admin not found", category="danger")
+        return redirect(url_for('members_bp.admins_page'))
+
+    new_name = request.form.get("name")
+    new_phone = request.form.get("phone")
+    new_email = request.form.get("email")
+    new_address = request.form.get("address")
+
+    try:
+        # Validate email uniqueness
+        if new_email != admin.email:
+            existing_user = User.query.filter(User.email == new_email, User.id != admin.id).first()
+            if existing_user:
+                flash("Email already in use by another user", category="danger")
+                return redirect(url_for('members_bp.admins_page'))
+
+        # Validate phone uniqueness
+        if new_phone != admin.phone:
+            existing_user = User.query.filter(User.phone == new_phone, User.id != admin.id).first()
+            if existing_user:
+                flash("Phone number already in use by another user", category="danger")
+                return redirect(url_for('members_bp.admins_page'))
+
+        # Update admin fields
+        admin.name = new_name
+        admin.phone = new_phone
+        admin.email = new_email
+        admin.address = new_address
+
+        db.session.commit()
+        flash("Admin updated successfully!", category="success")
+
+    except Exception as e:
+        flash(f"Failed to update admin: {str(e)}", category="danger")
+
+    return redirect(url_for('members_bp.admins_page'))
+
+# Delete admin
+@members_bp.route('/delete-admin/<int:admin_id>', methods=['POST'])
+def delete_admin(admin_id):
+    if current_user.id == admin_id:
+        flash("You cannot delete your own account!", category="danger")
+        return redirect(url_for('members_bp.admins_page'))
+
+    admin = User.query.get(admin_id)
+    if not admin or admin.role != 'admin':
+        flash("Admin not found", category="danger")
+        return redirect(url_for('members_bp.admins_page'))
+
+    try:
+        db.session.delete(admin)
+        db.session.commit()
+        flash("Admin deleted successfully!", category="success")
+    except Exception as e:
+        flash(f"Failed to delete admin: {str(e)}", category="danger")
+
+    return redirect(url_for('members_bp.admins_page'))
+
+# Update admin password
+@members_bp.route('/update-admin-password/<int:admin_id>', methods=['POST'])
+def update_admin_password(admin_id):
+    admin = User.query.get(admin_id)
+    if not admin or admin.role != 'admin':
+        flash("Admin not found", category="danger")
+        return redirect(url_for('members_bp.admins_page'))
+
+    form = AdminChangePasswordForm()
+    if form.validate_on_submit():
+        # Additional validation
+        if len(form.new_password.data) < 8:
+            flash("Password must be at least 8 characters", category="danger")
+            return redirect(url_for('members_bp.admins_page'))
+
+        if not any(char in '!@#$%^&*(),.?":{}|<>' for char in form.new_password.data):
+            flash("Password must contain at least one special character", category="danger")
+            return redirect(url_for('members_bp.admins_page'))
+
+        admin.password = generate_password_hash(form.new_password.data)
+        db.session.commit()
+        flash("Password updated successfully!", category="success")
+    else:
+        for error in form.errors.values():
+            flash(f"Error: {error[0]}", category="danger")
+
+    return redirect(url_for('members_bp.admins_page'))

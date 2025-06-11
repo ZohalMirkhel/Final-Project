@@ -5,7 +5,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from library.forms import LoginForm, RegistrationForm
 
 # Create the blueprint
-client_bp = Blueprint('client', __name__, url_prefix='/client')
+# client_bp = Blueprint('client', __name__, url_prefix='/client')
 login_bp = Blueprint('login_bp', __name__)
 
 

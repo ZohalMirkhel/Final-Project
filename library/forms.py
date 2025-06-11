@@ -22,30 +22,25 @@ def validate_member_name(member_name_to_check):
 
 
 class member_form(FlaskForm):
-
-    # check if phone number already exists
-    def validate_phone_number(self, phone_number_to_check):
-        phone = Member.query.filter_by(phone_number=phone_number_to_check.data).first()
-        if phone:
-            raise ValidationError('Phone Number already exists! Please try a different Phone Number')
-
-    membership_months = IntegerField(label='Membership Months',
-                                     validators=[InputRequired(), NumberRange(min=1)])
-    membership_fee = FloatField('Membership Fee', validators=[InputRequired(), NumberRange(min=20)])
     name = StringField(label='Name', validators=[Length(min=2, max=30), DataRequired()])
     member_name = StringField(label='Member Name', validators=[Length(min=2, max=30), DataRequired()])
     phone_number = StringField(label='Phone Number', validators=[DataRequired()])
+    membership_months = IntegerField(label='Membership Months',
+                                   validators=[InputRequired(), NumberRange(min=1)])
+    membership_fee = FloatField('Membership Fee', validators=[InputRequired(), NumberRange(min=20)])
     submit = SubmitField(label='Submit')
 
+    def validate_member_name(self, member_name):
+        member = Member.query.filter_by(member_name=member_name.data).first()
+        if member:
+            raise ValidationError('Username already exists! Please try a different username')
 
-# form for creating and updating books
+    def validate_phone_number(self, phone_number):
+        phone = Member.query.filter_by(phone_number=phone_number.data).first()
+        if phone:
+            raise ValidationError('Phone Number already exists! Please try a different Phone Number')
+
 class book_form(FlaskForm):
-    # checks if book already exists
-    def validate_title(self, title_to_check):
-        book = Book.query.filter_by(title=title_to_check.data).first()
-        if book:
-            raise ValidationError('Book already exists')
-
     title = StringField('Title', validators=[InputRequired()])
     isbn = StringField('ISBN', validators=[InputRequired()])
     author = StringField('Author', validators=[InputRequired()])
@@ -53,6 +48,11 @@ class book_form(FlaskForm):
     price = FloatField('Price', validators=[DataRequired()])
     stock = IntegerField('Stock', validators=[InputRequired()])
     submit = SubmitField('Add Book')
+
+    def validate_title(self, title):
+        book = Book.query.filter_by(title=title.data).first()
+        if book:
+            raise ValidationError('Book already exists')
 
 
 class FeedbackForm(FlaskForm):
@@ -207,3 +207,26 @@ class PaymentForm(FlaskForm):
     ])
     billing_address = StringField('Billing Address (optional)', validators=[Optional()])
     submit = SubmitField('Confirm Payment')
+
+# Add to forms.py
+class AdminCreateAdminForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired(), Length(min=2, max=100)])
+    email = EmailField('Email', validators=[DataRequired(), Email()])
+    phone = StringField('Phone', validators=[DataRequired()])
+    address = StringField('Address', validators=[DataRequired(), Length(min=5, max=200)])
+    password = PasswordField('Password', validators=[DataRequired(), validate_password_complexity])
+    confirm_password = PasswordField('Confirm Password', validators=[
+        DataRequired(),
+        EqualTo('password', message='Passwords must match')
+    ])
+    submit = SubmitField('Create Admin')
+
+    def validate_email(self, email):
+        user = User.query.filter_by(email=email.data).first()
+        if user:
+            raise ValidationError('Email already in use!')
+
+    def validate_phone(self, phone):
+        user = User.query.filter_by(phone=phone.data).first()
+        if user:
+            raise ValidationError('Phone number already in use!')

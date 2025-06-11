@@ -130,6 +130,11 @@
             </a>
           </li>
           <li>
+            <a href="{{ url_for('members_bp.admins_page') }}" class="nav-link px-2 {% if request.path == url_for('members_bp.admins_page') %}active{% endif %}">
+              AdminList
+            </a>
+          </li>
+          <li>
             <a href="{{ url_for('transactions_bp.transactions_page') }}" class="nav-link px-2 {% if request.path == url_for('transactions_bp.transactions_page') %}active{% endif %}">
               Transactions
             </a>
