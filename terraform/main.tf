@@ -1,36 +1,28 @@
 terraform {
-  required_providers {
-    docker = {
-      source  = "kreuzwerker/docker"
-      version = "~> 3.0.1"
-    }
-  }
+  required_version = ">= 1.0"
 }
 
-provider "docker" {}
-
-resource "docker_container" "library_app" {
-  name  = "library-management-app"
-  image = "final-project:latest"
-  
-  ports {
-    internal = 5001
-    external = 5001
+resource "null_resource" "docker_deploy" {
+  provisioner "local-exec" {
+    command = <<-EOT
+      docker rm -f library-management-app 2>$null
+      docker run -d -p 5001:5001 --name library-management-app final-project:latest
+      echo "Container created successfully!"
+    EOT
   }
   
-  start    = true
-  must_run = true
+  provisioner "local-exec" {
+    when    = destroy
+    command = "docker rm -f library-management-app"
+  }
 }
 
 output "app_url" {
   value       = "http://localhost:5001"
-  description = "Library Management System URL"
-}
-
-output "container_name" {
-  value = docker_container.library_app.name
+  description = "Application URL"
 }
 
 output "view_logs_command" {
-  value = "docker logs library-management-app"
+  value       = "docker logs library-management-app"
+  description = "Command to view logs"
 }
