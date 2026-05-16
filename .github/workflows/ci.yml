@@ -2,9 +2,9 @@ name: Library Management System CI/CD
 
 on:
   push:
-    branches: [ main, master, user, development ]
+    branches: [ development, user, main, library-management-system  ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ development, main ]
 
 jobs:
   test:
