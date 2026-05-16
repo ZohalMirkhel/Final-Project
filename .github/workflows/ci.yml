@@ -81,6 +81,4 @@ jobs:
 
     - name: Pipeline summary
       run: |
-        echo "========================================="
         echo "  CI/CD PIPELINE COMPLETED SUCCESSFULLY"
-        echo "========================================="
